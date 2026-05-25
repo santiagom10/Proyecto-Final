@@ -11,13 +11,16 @@ qt_add_executable(ProyectoFinal
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-    resources.qrc
+
 )
 
 qt_add_resources(ProyectoFinal "resources"
     PREFIX "/"
     FILES
         Imagenes/Escenario1.png
+        Imagenes/Boton_inicio.png
+        Imagenes/Boton_personajes.png
+        Imagenes/Boton_salir.png
 )
 
 target_link_libraries(ProyectoFinal

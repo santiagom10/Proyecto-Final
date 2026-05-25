@@ -7,6 +7,11 @@
 #include <QGraphicsView>
 #include <QKeyEvent>
 
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
+#include <QStackedWidget>
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -30,6 +35,13 @@ private:
     QGraphicsScene *scene;
 
     QGraphicsPixmapItem *player;
+
+    QStackedWidget *stack;
+
+    QWidget *menuPrincipal;
+    QWidget *menuNiveles;
+    QWidget *menuPersonajes;
+    QWidget *pantallaJuego;
 };
 
 #endif
