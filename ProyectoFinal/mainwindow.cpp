@@ -35,6 +35,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Crea la ventana del menu
     menuPrincipal = new QWidget();
 
+    // FONDO DEL MENU PRINCIPAL
+    menuPrincipal->setStyleSheet(
+        "QWidget {"
+        "border-image: url(:/Imagenes/Fondo_menu.png) 0 0 0 0 stretch stretch;"
+        "}"
+        );
+
+
     // Layout vertical
     // Para acomodar automaticamente los botones
     QVBoxLayout *layoutMenu = new QVBoxLayout();
@@ -115,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent)
     menuPrincipal->setLayout(layoutMenu);
 
 
+
     // Menu niveles
     /*
         Crea una nueva pantalla vacía.
@@ -138,9 +147,8 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *layoutNiveles = new QVBoxLayout();
 
 
-    // ========================================
+
     // BOTON NIVEL 1
-    // ========================================
 
     QPushButton *nivel1 =
         new QPushButton("Nivel 1");
@@ -161,9 +169,8 @@ MainWindow::MainWindow(QWidget *parent)
 
         );
 
-    // ========================================
+
     // BOTON NIVEL 2
-    // ========================================
 
     QPushButton *nivel2 =
         new QPushButton("Nivel 2");
@@ -374,11 +381,10 @@ MainWindow::MainWindow(QWidget *parent)
     player = scene->addPixmap(pixmap);
 
     // Posicion inicial
-    player->setPos(100,100);
+    player->setPos(100,320);
 
-    // ========================================
+
     // AGREGAR PANTALLAS AL STACK
-    // ========================================
 
     stack->addWidget(menuPrincipal);
     stack->addWidget(menuNiveles);
@@ -405,7 +411,6 @@ MainWindow::MainWindow(QWidget *parent)
             &QPushButton::clicked,
 
             [=](){
-
                 stack->setCurrentWidget(
                     menuNiveles
                     );
@@ -418,7 +423,6 @@ MainWindow::MainWindow(QWidget *parent)
             &QPushButton::clicked,
 
             [=](){
-
                 stack->setCurrentWidget(
                     menuPersonajes
                     );
@@ -473,7 +477,6 @@ MainWindow::~MainWindow()
 
 
 // Movimiento del jugador
-
 
 void MainWindow::keyPressEvent(
     QKeyEvent *event)

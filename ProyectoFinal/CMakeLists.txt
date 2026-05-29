@@ -21,6 +21,7 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Boton_inicio.png
         Imagenes/Boton_personajes.png
         Imagenes/Boton_salir.png
+        Imagenes/Fondo_menu.png
 )
 
 target_link_libraries(ProyectoFinal
