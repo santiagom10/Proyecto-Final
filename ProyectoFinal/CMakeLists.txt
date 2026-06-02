@@ -11,6 +11,8 @@ qt_add_executable(ProyectoFinal
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    jugador.h jugador.cpp
+    obstaculo.h obstaculo.cpp
 
 )
 

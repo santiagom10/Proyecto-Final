@@ -1,6 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QTimer>
+#include "jugador.h"
+#include "obstaculo.h"
+#include <vector>
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QGraphicsPixmapItem>
@@ -33,15 +37,17 @@ private:
     Ui::MainWindow *ui;
 
     QGraphicsScene *scene;
-
-    QGraphicsPixmapItem *player;
+    QGraphicsView *view;
+    Jugador *player;
+    QTimer *timerJuego;
 
     QStackedWidget *stack;
-
     QWidget *menuPrincipal;
     QWidget *menuNiveles;
     QWidget *menuPersonajes;
     QWidget *pantallaJuego;
+
+    std::vector<Obstaculo*> obstaculosNivel1;
 };
 
 #endif

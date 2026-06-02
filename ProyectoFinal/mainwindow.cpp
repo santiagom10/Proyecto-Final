@@ -388,15 +388,30 @@ MainWindow::MainWindow(QWidget *parent)
     // Colocar fondo
     scene->setBackgroundBrush(background);
 
-
     // Crear jugador
-    QPixmap pixmap(50,50);
+    player = new Jugador();
 
-    // Color temporal
-    pixmap.fill(Qt::blue);
+    // Cargar imagen real (o temporal si no tienes)
+    QPixmap pixmap(":/Imagenes/personaje1.png");
 
-    // Agregar jugador
-    player = scene->addPixmap(pixmap);
+    if(pixmap.isNull())
+    {
+        qDebug() << "No se encontró la imagen del jugador";
+
+        QPixmap temp(50,50);
+        temp.fill(Qt::blue);
+        player->setPixmap(temp);
+    }
+    else
+    {
+        player->setPixmap(pixmap.scaled(60,60));
+    }
+
+    // Posición inicial
+    player->setPos(100,320);
+
+    // Agregar a la escena
+    scene->addItem(player);
 
     // Posicion inicial
     player->setPos(100,320);
