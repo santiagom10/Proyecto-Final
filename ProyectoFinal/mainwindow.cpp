@@ -189,9 +189,17 @@ MainWindow::MainWindow(QWidget *parent)
 
         );
 
+
+    // BOTON VOLVER
+    QPushButton *volverNiveles = new QPushButton("Volver");
+
+    volverNiveles->setFixedSize(300,100);
+
+
     // Agregar botones
     layoutNiveles->addWidget(nivel1);
     layoutNiveles->addWidget(nivel2);
+    layoutNiveles->addWidget(volverNiveles);
 
     // Centrar
     layoutNiveles->setAlignment( Qt::AlignCenter );
@@ -316,10 +324,20 @@ MainWindow::MainWindow(QWidget *parent)
 
         );
 
+
+    // BOTON VOLVER
+
+    QPushButton *volverPersonajes = new QPushButton("Volver");
+
+    volverPersonajes->setFixedSize(300,100);
+
+
+
     // Agregar personajes
     layoutPersonajes->addWidget(personaje1);
     layoutPersonajes->addWidget(personaje2);
     layoutPersonajes->addWidget(personaje3);
+    layoutPersonajes->addWidget(volverPersonajes);
 
     // Centrar
     layoutPersonajes->setAlignment( Qt::AlignCenter );
@@ -429,14 +447,14 @@ MainWindow::MainWindow(QWidget *parent)
 
             });
 
-
-    // Boton salir
-    connect(btnSalir,
+    connect(volverPersonajes,
             &QPushButton::clicked,
 
             [=](){
 
-                close();
+                stack->setCurrentWidget(
+                    menuPrincipal
+                    );
 
             });
 
@@ -464,6 +482,17 @@ MainWindow::MainWindow(QWidget *parent)
                     pantallaJuego
                     );
 
+            });
+
+
+    connect(volverNiveles,
+            &QPushButton::clicked,
+
+            [=](){
+
+                stack->setCurrentWidget(
+                    menuPrincipal
+                    );
             });
 }
 
