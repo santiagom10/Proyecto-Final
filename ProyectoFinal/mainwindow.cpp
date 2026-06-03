@@ -1,704 +1,407 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
-// Libreria para mensajes en consola
-// Para pruebas
 #include <QDebug>
+#include <QLabel>
+#include <QHBoxLayout>
 
-
-// Constructor
+// ================================================================
+//  Constructor
+// ================================================================
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    // Inicializar interfaz
     ui->setupUi(this);
 
-    personajeSeleccionado = ":/Imagenes/skater.png";
-
-    // Tamaño de la ventana
-    resize(1000,500);
-
-    // Stack para cambiar pantallas
-    /*
-       - Menu principal
-       - Menu niveles
-       - Menu personajes
-       - Juego
-    */
+    personajeSeleccionado = ":/Imagenes/Skater.png";
+    resize(1000, 600);
+    setWindowTitle("Skate en el Universo de los Dulces");
 
     stack = new QStackedWidget(this);
-
-    // Colocar stack como widget principal
-    // para colocar el menu en el centro de la pantalla
     setCentralWidget(stack);
 
-
-    // Crea la ventana del menu
+    // ============================================================
+    //  MENÚ PRINCIPAL  — solo 2 botones: JUGAR y SALIR
+    //  Flujo: Jugar → elegir personaje → elegir nivel → jugar
+    // ============================================================
     menuPrincipal = new QWidget();
-
-    // FONDO DEL MENU PRINCIPAL
     menuPrincipal->setStyleSheet(
         "QWidget {"
         "border-image: url(:/Imagenes/Fondo_menu.png) 0 0 0 0 stretch stretch;"
         "}"
         );
 
-
-    // Layout vertical
-    // Para acomodar automaticamente los botones
     QVBoxLayout *layoutMenu = new QVBoxLayout();
-
-
-    // Boton inicio
-    QPushButton *btnInicio = new QPushButton();
-
-    // Tamaño del boton
-    btnInicio->setFixedSize(400,120);
-
-    // Imagen del boton
-    btnInicio->setStyleSheet(
-
-        "QPushButton {"
-
-        "border-image: url(:/Imagenes/Boton_inicio.png) 0 0 0 0 stretch stretch;"
-        "background-color: transparent;"
-        "border: none;"
-
-        "}"
-
-        );
-
-
-    // BOTON PERSONAJES
-    QPushButton *btnPersonajes = new QPushButton();
-
-    // Tamaño del boton
-    btnPersonajes->setFixedSize(400,120);
-
-    // Imagen del boton
-    btnPersonajes->setStyleSheet(
-
-        "QPushButton {"
-
-        "border-image: url(:/Imagenes/Boton_personajes.png) 0 0 0 0 stretch stretch;"
-        "background-color: transparent;"
-        "border: none;"
-
-        "}"
-
-        );
-
-
-    // Boton salir
-    QPushButton *btnSalir = new QPushButton();
-
-    // Tamaño del boton
-    btnSalir->setFixedSize(400,120);
-
-    // Imagen del boton
-    btnSalir->setStyleSheet(
-
-        "QPushButton {"
-
-        "border-image: url(:/Imagenes/Boton_salir.png) 0 0 0 0 stretch stretch;"
-        "background-color: transparent;"
-        "border: none;"
-
-        "}"
-
-        );
-
-
-    // Agrega botones al layout
-    layoutMenu->addWidget(btnInicio);
-    layoutMenu->addWidget(btnPersonajes);
-    layoutMenu->addWidget(btnSalir);
-
-    // Espacio entre botones
-    layoutMenu->setSpacing(30);
-
-    // Centrar botones
+    layoutMenu->setSpacing(20);
     layoutMenu->setAlignment(Qt::AlignCenter);
 
-    // Asignar layout
+    // Botón JUGAR — reutiliza la imagen de Boton_inicio.png
+    QPushButton *btnJugar = new QPushButton();
+    btnJugar->setFixedSize(400, 120);
+    btnJugar->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/Imagenes/Boton_inicio.png) 0 0 0 0 stretch stretch;"
+        "background-color: transparent; border: none;"
+        "}"
+        );
+
+    // Botón SALIR
+    QPushButton *btnSalir = new QPushButton();
+    btnSalir->setFixedSize(400, 120);
+    btnSalir->setStyleSheet(
+        "QPushButton {"
+        "border-image: url(:/Imagenes/Boton_salir.png) 0 0 0 0 stretch stretch;"
+        "background-color: transparent; border: none;"
+        "}"
+        );
+
+    layoutMenu->addWidget(btnJugar);
+    layoutMenu->addWidget(btnSalir);
     menuPrincipal->setLayout(layoutMenu);
 
-
-
-    // Menu niveles
-    /*
-        Crea una nueva pantalla vacía.
-
-        Esa pantalla será:
-        menuNiveles
-            Nivel 1
-            Nivel 2
-    */
-
-    menuNiveles = new QWidget();
-
-
-    /* Esto crea un organizador vertical.
-
-        Organizar automáticamente los botones:
-        Nivel 1
-        Nivel 2
-        uno debajo del otro.
-    */
-    QVBoxLayout *layoutNiveles = new QVBoxLayout();
-
-
-
-    // BOTON NIVEL 1
-
-    QPushButton *nivel1 =
-        new QPushButton("Nivel 1");
-
-    // Tamaño
-    nivel1->setFixedSize(300,100);
-
-    // Color visible
-    nivel1->setStyleSheet(
-
-        "QPushButton {"
-
-        "background-color: blue;"
-        "color: white;"
-        "font-size: 30px;"
-
-        "}"
-
-        );
-
-
-    // BOTON NIVEL 2
-
-    QPushButton *nivel2 =
-        new QPushButton("Nivel 2");
-
-    nivel2->setFixedSize(300,100);
-
-    nivel2->setStyleSheet(
-
-        "QPushButton {"
-
-        "background-color: green;"
-        "color: white;"
-        "font-size: 30px;"
-
-        "}"
-
-        );
-
-
-    // BOTON VOLVER
-    QPushButton *volverNiveles = new QPushButton("Volver");
-
-    volverNiveles->setFixedSize(300,100);
-
-
-    // Agregar botones
-    layoutNiveles->addWidget(nivel1);
-    layoutNiveles->addWidget(nivel2);
-    layoutNiveles->addWidget(volverNiveles);
-
-    // Centrar
-    layoutNiveles->setAlignment( Qt::AlignCenter );
-
-    // Asignar layout
-    menuNiveles->setLayout(layoutNiveles);
-
-
-    // Menu personajes
+    // ============================================================
+    //  MENÚ PERSONAJES  (segunda pantalla después de Jugar)
+    // ============================================================
     menuPersonajes = new QWidget();
+    menuPersonajes->setStyleSheet("background-color: #16213e;");
 
     QVBoxLayout *layoutPersonajes = new QVBoxLayout();
+    layoutPersonajes->setSpacing(24);
+    layoutPersonajes->setAlignment(Qt::AlignCenter);
 
-    /*
-    // Personaje 1
-    QPushButton *personaje1 = new QPushButton();
+    QLabel *tituloPersonajes = new QLabel("Elige tu personaje");
+    tituloPersonajes->setStyleSheet(
+        "color: white; font-size: 30px; font-weight: bold;"
+        "background: transparent;"
+        );
+    tituloPersonajes->setAlignment(Qt::AlignCenter);
 
-    personaje1->setFixedSize(150,150);
+    // Fila de personajes
+    QHBoxLayout *filaPersonajes = new QHBoxLayout();
+    filaPersonajes->setSpacing(40);
+    filaPersonajes->setAlignment(Qt::AlignCenter);
 
-    personaje1->setStyleSheet(
+    // ── Helper para crear cada tarjeta de personaje ──
+    auto crearTarjeta = [&](const QString &rutaSprite,
+                            const QString &nombre,
+                            const QString &colorBorde) -> QPushButton*
+    {
+        QWidget      *tarjeta  = new QWidget();
+        QVBoxLayout  *ly       = new QVBoxLayout(tarjeta);
+        ly->setAlignment(Qt::AlignCenter);
+        ly->setSpacing(8);
 
-        "QPushButton {"
+        QPushButton *btn = new QPushButton();
+        btn->setFixedSize(110, 110);
 
-        "border-image: url(:/Imagenes/personaje1.png);"
-        "background-color: transparent;"
-        "border: none;"
+        QPixmap px(rutaSprite);
+        if (!px.isNull()) {
+            int fww = px.width() / 7;
+            int fhh = px.height() / 2;
+            // Mostrar el frame de ride1 (fila 1, col 0) en la tarjeta
+            QPixmap frame = px.copy(0, fhh, fww, fhh);
+            btn->setIcon(QIcon(frame));
+            btn->setIconSize(QSize(100, 100));
+        } else {
+            btn->setText(nombre.left(1));
+            btn->setStyleSheet(
+                QString("QPushButton { background-color: %1; color:white;"
+                        "font-size:28px; border-radius:12px; }").arg(colorBorde)
+                );
+        }
 
-        "}"
+        btn->setStyleSheet(
+            QString("QPushButton {"
+                    "background-color: #0f3460;"
+                    "border-radius: 14px;"
+                    "border: 3px solid %1;"
+                    "}"
+                    "QPushButton:hover {"
+                    "background-color: %1;"
+                    "}").arg(colorBorde)
+            );
 
+        QLabel *lbl = new QLabel(nombre);
+        lbl->setStyleSheet(
+            "color: white; font-size: 18px; font-weight: bold;"
+            "background: transparent;"
+            );
+        lbl->setAlignment(Qt::AlignCenter);
+
+        ly->addWidget(btn);
+        ly->addWidget(lbl);
+        filaPersonajes->addWidget(tarjeta);
+        return btn;
+    };
+
+    QPushButton *btnSkater = crearTarjeta(":/Imagenes/Skater.png", "Skater",  "#2e86de");
+    QPushButton *btnOzzy   = crearTarjeta(":/Imagenes/Ozzy.png",   "Ozzy",    "#8e44ad");
+    // Personaje 3: reutiliza Skater hasta que tengan imagen propia
+    QPushButton *btnP3     = crearTarjeta(":/Imagenes/Skater.png", "Misterioso", "#e67e22");
+
+    QPushButton *volverPersonajes = new QPushButton("← Volver");
+    volverPersonajes->setFixedSize(160, 46);
+    volverPersonajes->setStyleSheet(
+        "QPushButton { background-color: #576574; color:white;"
+        "border-radius:8px; font-size:16px; }"
+        "QPushButton:hover { background-color: #747d8c; }"
         );
 
+    layoutPersonajes->addWidget(tituloPersonajes);
+    layoutPersonajes->addLayout(filaPersonajes);
+    layoutPersonajes->addWidget(volverPersonajes, 0, Qt::AlignCenter);
+    menuPersonajes->setLayout(layoutPersonajes);
 
-    // Personaje 2
-    QPushButton *personaje2 = new QPushButton();
+    // ============================================================
+    //  MENÚ NIVELES  (tercera pantalla, tras elegir personaje)
+    // ============================================================
+    menuNiveles = new QWidget();
+    menuNiveles->setStyleSheet("background-color: #1a1a2e;");
 
-    personaje2->setFixedSize(150,150);
+    QVBoxLayout *layoutNiveles = new QVBoxLayout();
+    layoutNiveles->setSpacing(20);
+    layoutNiveles->setAlignment(Qt::AlignCenter);
 
-    personaje2->setStyleSheet(
+    QLabel *tituloNiveles = new QLabel("Elige un nivel");
+    tituloNiveles->setStyleSheet(
+        "color: white; font-size: 30px; font-weight: bold;"
+        "background: transparent;"
+        );
+    tituloNiveles->setAlignment(Qt::AlignCenter);
 
-        "QPushButton {"
+    QPushButton *nivel1        = new QPushButton("Nivel 1 – Ruta de Chocolate");
+    QPushButton *nivel2        = new QPushButton("Nivel 2 – Zona de Gelatina");
+    QPushButton *volverNiveles = new QPushButton("← Volver");
 
-        "border-image: url(:/Imagenes/personaje2.png);"
-        "background-color: transparent;"
-        "border: none;"
+    nivel1->setFixedSize(380, 90);
+    nivel2->setFixedSize(380, 90);
+    volverNiveles->setFixedSize(160, 46);
 
-        "}"
-
+    nivel1->setStyleSheet(
+        "QPushButton { background-color: #2e86de; color:white; font-size:20px;"
+        "font-weight:bold; border-radius:12px; }"
+        "QPushButton:hover { background-color: #54a0ff; }"
+        );
+    nivel2->setStyleSheet(
+        "QPushButton { background-color: #10ac84; color:white; font-size:20px;"
+        "font-weight:bold; border-radius:12px; }"
+        "QPushButton:hover { background-color: #1dd1a1; }"
+        );
+    volverNiveles->setStyleSheet(
+        "QPushButton { background-color: #576574; color:white; border-radius:8px; font-size:16px; }"
+        "QPushButton:hover { background-color: #747d8c; }"
         );
 
+    layoutNiveles->addWidget(tituloNiveles);
+    layoutNiveles->addWidget(nivel1);
+    layoutNiveles->addWidget(nivel2);
+    layoutNiveles->addWidget(volverNiveles, 0, Qt::AlignCenter);
+    menuNiveles->setLayout(layoutNiveles);
 
-    // Personaje 3
-    QPushButton *personaje3 = new QPushButton();
-
-    personaje3->setFixedSize(150,150);
-
-    personaje3->setStyleSheet(
-
-        "QPushButton {"
-
-        "border-image: url(:/Imagenes/personaje3.png);"
-        "background-color: transparent;"
-        "border: none;"
-
-        "}"
-
-        );
-    */
-
-    // BOTONES DE PERSONAJES PROVISSIONALES HASTA QUE DECIDAMOS CUALES COLOCAREMOS
-
-    // Personaje 1
-    QPushButton *personaje1 =
-        new QPushButton("Personaje 1");
-
-    personaje1->setFixedSize(300,100);
-
-    personaje1->setStyleSheet(
-
-        "QPushButton {"
-
-        "background-color: red;"
-        "color: white;"
-        "font-size: 25px;"
-
-        "}"
-
-        );
-
-    // Personaje 2
-    QPushButton *personaje2 =
-        new QPushButton("Personaje 2");
-
-    personaje2->setFixedSize(300,100);
-
-    personaje2->setStyleSheet(
-
-        "QPushButton {"
-
-        "background-color: purple;"
-        "color: white;"
-        "font-size: 25px;"
-
-        "}"
-
-        );
-
-    // Personaje 3
-    QPushButton *personaje3 =
-        new QPushButton("Personaje 3");
-
-    personaje3->setFixedSize(300,100);
-
-    personaje3->setStyleSheet(
-
-        "QPushButton {"
-
-        "background-color: orange;"
-        "color: white;"
-        "font-size: 25px;"
-
-        "}"
-
-        );
-
-
-    // BOTON VOLVER
-
-    QPushButton *volverPersonajes = new QPushButton("Volver");
-
-    volverPersonajes->setFixedSize(300,100);
-
-
-
-    // Agregar personajes
-    layoutPersonajes->addWidget(personaje1);
-    layoutPersonajes->addWidget(personaje2);
-    layoutPersonajes->addWidget(personaje3);
-    layoutPersonajes->addWidget(volverPersonajes);
-
-    // Centrar
-    layoutPersonajes->setAlignment( Qt::AlignCenter );
-
-    // Asignar layout
-    menuPersonajes->setLayout( layoutPersonajes );
-
-
-    // Pantalla del juegoo
+    // ============================================================
+    //  PANTALLA DE JUEGO
+    // ============================================================
     pantallaJuego = new QWidget();
 
-
-    // Crear escena
     scene = new QGraphicsScene(this);
+    scene->setSceneRect(0, 0, 800, 500);
 
-    // Tamaño del mundo
-    scene->setSceneRect(0,0,800,600);
-
-
-    // Crear vista
-    QGraphicsView *view = new QGraphicsView(scene);
-
-    // Layout del juego
-    QVBoxLayout *layoutJuego = new QVBoxLayout();
-
-    // Agregar vista
-    layoutJuego->addWidget(view);
-
-    // Asignar layout
-    pantallaJuego->setLayout(layoutJuego);
-
-
-    // Fondo del juego
-    QPixmap background( ":/Imagenes/Escenario1.png" );
-
-    // Verificar carga
-    if(background.isNull())
-    {
-        qDebug()
-        << "La imagen NO se encontro";
-    }
+    QPixmap bg(":/Imagenes/Escenario1.png");
+    if (!bg.isNull())
+        scene->setBackgroundBrush(bg.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
     else
-    {
-        qDebug()
-        << "Imagen cargada correctamente";
-    }
+        scene->setBackgroundBrush(QColor(100, 180, 100));
 
-    // Colocar fondo
-    scene->setBackgroundBrush(background);
+    view = new QGraphicsView(scene);
+    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    view->setFrameStyle(0);
+    view->setFixedSize(800, 500);
+    view->setSceneRect(0, 0, 800, 500);
 
-    // Crear jugador
     player = new Jugador();
-
-    // Cargar la imagen del personaje seleccionado por defecto
-    QPixmap pixmap(personajeSeleccionado);
-
-    if(pixmap.isNull())
-    {
-        qDebug() << "No se encontró la imagen inicial del jugador:" << personajeSeleccionado;
-        // Solo si falla, ponemos un cuadrado azul
-        QPixmap temp(50,50);
-        temp.fill(Qt::blue);
-        player->setPixmap(temp);
-    }
-    else
-    {
-        // Aplicamos el recorte
-        int anchoFrame = pixmap.width() / 7;
-        int altoFrame = pixmap.height() / 2;
-        QPixmap idle = pixmap.copy(0, 0, anchoFrame, altoFrame);
-
-        player->setPixmap(idle.scaled(90, 90, Qt::KeepAspectRatio, Qt::FastTransformation));
-
-
-
-    }
-
-    /*
-    // Cargar imagen real (o temporal si no tienes)
-    QPixmap pixmap(":/Imagenes/personaje1.png");
-
-    if(pixmap.isNull())
-    {
-        qDebug() << "No se encontró la imagen del jugador";
-
-        QPixmap temp(50,50);
-        temp.fill(Qt::blue);
-        player->setPixmap(temp);
-    }
-    else
-    {
-        player->setPixmap(pixmap.scaled(60,60));
-    }
-    */
-
-
-
-    // Posición inicial
-    player->setPos(100,320);
-
-    // Agregar a la escena
+    player->setSueloY(320);
     scene->addItem(player);
+    player->setPos(100, 320);
+    player->cargarSprite(personajeSeleccionado);
 
-    // Posicion inicial
-    player->setPos(100,320);
+    QVBoxLayout *layoutJuego = new QVBoxLayout();
+    layoutJuego->setAlignment(Qt::AlignCenter);
+    layoutJuego->setContentsMargins(0, 0, 0, 0);
+    layoutJuego->addWidget(view);
+    pantallaJuego->setLayout(layoutJuego);
+    pantallaJuego->setStyleSheet("background-color: #1a1a2e;");
 
-
-    // AGREGAR PANTALLAS AL STACK
-
+    // ────────────────────────────────────────────────────────────
+    //  STACK
+    // ────────────────────────────────────────────────────────────
     stack->addWidget(menuPrincipal);
-    stack->addWidget(menuNiveles);
     stack->addWidget(menuPersonajes);
+    stack->addWidget(menuNiveles);
     stack->addWidget(pantallaJuego);
+    stack->setCurrentWidget(menuPrincipal);
 
-    // Mostrar menu principal
-    stack->setCurrentWidget( menuPrincipal );
+    // ────────────────────────────────────────────────────────────
+    //  TIMERS
+    // ────────────────────────────────────────────────────────────
+    timerJuego = new QTimer(this);
+    timerJuego->setInterval(16);   // ~60 fps
+    connect(timerJuego, &QTimer::timeout, this, &MainWindow::tickJuego);
 
+    // Timer de animación del sprite (~10 fps)
+    timerAnim = new QTimer(this);
+    timerAnim->setInterval(100);
+    connect(timerAnim, &QTimer::timeout, this, [this](){
+        if (stack->currentWidget() == pantallaJuego)
+            player->actualizarSprite();
+    });
 
-    // Boton inicio
-    /*
-    connect(btnInicio,
-            &QPushButton::clicked,
+    // ────────────────────────────────────────────────────────────
+    //  CONEXIONES
+    // ────────────────────────────────────────────────────────────
 
-            [=](){
+    // Jugar → personajes
+    connect(btnJugar, &QPushButton::clicked, [=](){
+        stack->setCurrentWidget(menuPersonajes);
+    });
 
-                qDebug() << "CLICK EN INICIO";
+    // Salir
+    connect(btnSalir, &QPushButton::clicked, [=](){ close(); });
 
-            });
-    */
+    // Volver desde personajes → menú principal
+    connect(volverPersonajes, &QPushButton::clicked, [=](){
+        stack->setCurrentWidget(menuPrincipal);
+    });
 
-    connect(btnInicio,
-            &QPushButton::clicked,
+    // Volver desde niveles → personajes
+    connect(volverNiveles, &QPushButton::clicked, [=](){
+        stack->setCurrentWidget(menuPersonajes);
+    });
 
-            [=](){
-                stack->setCurrentWidget(
-                    menuNiveles
-                    );
-
-            });
-
-
-    // Boton personajes
-    connect(btnPersonajes,
-            &QPushButton::clicked,
-
-            [=](){
-                stack->setCurrentWidget(
-                    menuPersonajes
-                    );
-
-            });
-
-    connect(volverPersonajes,
-            &QPushButton::clicked,
-
-            [=](){
-
-                stack->setCurrentWidget(
-                    menuPrincipal
-                    );
-
-            });
-
-
-    // Nivel 1
-    connect(nivel1,
-            &QPushButton::clicked,
-
-            [=]()
-            {
-                qDebug() << personajeSeleccionado;
-
-                QPixmap sprite(personajeSeleccionado);
-
-                qDebug() << sprite.isNull();
-
-                if(!sprite.isNull())
-                {
-                    int anchoFrame =
-                        sprite.width() / 7;
-
-                    int altoFrame =
-                        sprite.height() / 2;
-
-                    QPixmap idle =
-                        sprite.copy(
-                            0,
-                            0,
-                            anchoFrame,
-                            altoFrame
-                            );
-
-                    player->setPixmap(
-                        idle.scaled(
-                            90,
-                            90,
-                            Qt::KeepAspectRatio,
-                            Qt::FastTransformation
-                            )
-                        );
-
-
-                    // Para comprobar si carga la imagen
-                    /*
-                    player->setPixmap(
-                        sprite.scaled(
-                            200,
-                            200,
-                            Qt::KeepAspectRatio,
-                            Qt::FastTransformation
-                            )
-                        );
-                    */
-
-                }
-                else
-                {
-                    qDebug() << "No se encontro el sprite";
-                }
-
-                player->setPos(100,320);
-
-                stack->setCurrentWidget(
-                    pantallaJuego
-                    );
-            });
-
-    // Nivel 2
-    connect(nivel2,
-            &QPushButton::clicked,
-
-            [=]()
-            {
-                QPixmap sprite(personajeSeleccionado);
-
-                if(!sprite.isNull())
-                {
-                    int anchoFrame =
-                        sprite.width() / 7;
-
-                    int altoFrame =
-                        sprite.height() / 2;
-
-                    QPixmap idle =
-                        sprite.copy(
-                            0,
-                            0,
-                            anchoFrame,
-                            altoFrame
-                            );
-
-                    player->setPixmap(
-                        idle.scaled(
-                            90,
-                            90,
-                            Qt::KeepAspectRatio,
-                            Qt::FastTransformation
-                            )
-                        );
-                }
-                else
-                {
-                    qDebug() << "No se encontro el sprite";
-                }
-
-                player->setPos(100,320);
-
-                stack->setCurrentWidget(
-                    pantallaJuego
-                    );
-            });
-
-
-    connect(volverNiveles,
-            &QPushButton::clicked,
-
-            [=](){
-
-                stack->setCurrentWidget(
-                    menuPrincipal
-                    );
-            });
-
-    // Seleccionar Skater
-    connect(personaje1, &QPushButton::clicked, [=]() {
-        // Revisa si tu imagen se llama Skater.png o skater.png en el archivo .qrc
+    // Selección de personajes → ir a niveles
+    connect(btnSkater, &QPushButton::clicked, [=](){
         personajeSeleccionado = ":/Imagenes/Skater.png";
-        qDebug() << "Skater seleccionado";
-
         stack->setCurrentWidget(menuNiveles);
     });
-
-    // Seleccionar Ozzy
-    connect(personaje2, &QPushButton::clicked, [=]() {
-        // Revisa si tu imagen se llama Ozzy.png o ozzy.png en el archivo .qrc
+    connect(btnOzzy, &QPushButton::clicked, [=](){
         personajeSeleccionado = ":/Imagenes/Ozzy.png";
-        qDebug() << "Ozzy seleccionado";
-
+        stack->setCurrentWidget(menuNiveles);
+    });
+    connect(btnP3, &QPushButton::clicked, [=](){
+        personajeSeleccionado = ":/Imagenes/Skater.png"; // cambiar cuando tengan imagen
         stack->setCurrentWidget(menuNiveles);
     });
 
+    // Iniciar niveles
+    connect(nivel1, &QPushButton::clicked, [=](){ iniciarNivel(1); });
+    connect(nivel2, &QPushButton::clicked, [=](){ iniciarNivel(2); });
 }
 
-
-// Dstructor
+// ================================================================
+//  Destructor
+// ================================================================
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-// Movimiento del jugador
-void MainWindow::keyPressEvent(
-    QKeyEvent *event)
+// ================================================================
+//  Inicia el nivel: carga personaje, fondo y arranca timers
+// ================================================================
+void MainWindow::iniciarNivel(int num)
 {
-    // Velocidad jugador
-    int speed = 10;
+    player->cargarSprite(personajeSeleccionado);
+    player->setPos(100, 320);
+    player->detenerCaida();
 
-    // Guardar posicion anterior
-    qreal oldX = player->x();
-
-    qreal oldY = player->y();
-
-
-    // Arriba
-    if(event->key() == Qt::Key_W)
-    {
-        player->moveBy(0, -speed);
+    if (num == 1) {
+        QPixmap bg(":/Imagenes/Escenario1.png");
+        scene->setBackgroundBrush(
+            bg.isNull() ? QBrush(QColor(100,180,100))
+                        : QBrush(bg.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation))
+            );
+    } else {
+        // Nivel 2: mismo fondo por ahora (agregar Escenario2.png cuando esté)
+        QPixmap bg(":/Imagenes/Escenario1.png");
+        scene->setBackgroundBrush(
+            bg.isNull() ? QBrush(QColor(60,200,160))
+                        : QBrush(bg.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation))
+            );
     }
 
+    stack->setCurrentWidget(pantallaJuego);
+    setFocus();
+    timerJuego->start();
+    timerAnim->start();
+}
 
-    // Abajo
-    if(event->key() == Qt::Key_S)
+// ================================================================
+//  Tick principal: lee teclas activas y aplica física
+// ================================================================
+void MainWindow::tickJuego()
+{
+    if (stack->currentWidget() != pantallaJuego) return;
+
+    bool moviendose = false;
+
+    if (teclasActivas.contains(Qt::Key_A) ||
+        teclasActivas.contains(Qt::Key_Left))
     {
-        player->moveBy(0, speed);
+        player->moverIzquierda();
+        moviendose = true;
+    }
+    else if (teclasActivas.contains(Qt::Key_D) ||
+             teclasActivas.contains(Qt::Key_Right))
+    {
+        player->moverDerecha();
+        moviendose = true;
     }
 
+    if (!moviendose)
+        player->detenerHorizontal();
 
-    // Izquierda
-    if(event->key() == Qt::Key_A)
+    // Colisiones con obstáculos antes de aplicar física
+    qreal ox = player->x();
+    qreal oy = player->y();
+
+    player->aplicarFisica();
+
+    QList<QGraphicsItem*> cols = player->collidingItems();
+    if (!cols.isEmpty()) {
+        player->setPos(ox, oy);
+        player->detenerCaida();
+    }
+}
+
+// ================================================================
+//  Teclado
+// ================================================================
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    // ESC → volver al menú
+    if (event->key() == Qt::Key_Escape &&
+        stack->currentWidget() == pantallaJuego)
     {
-        player->moveBy(-speed, 0);
+        timerJuego->stop();
+        timerAnim->stop();
+        stack->setCurrentWidget(menuPrincipal);
+        return;
     }
 
-
-    // Derecha
-    if(event->key() == Qt::Key_D)
+    // Salto (una sola vez, sin autorepeat)
+    if (!event->isAutoRepeat() &&
+        (event->key() == Qt::Key_W     ||
+         event->key() == Qt::Key_Up    ||
+         event->key() == Qt::Key_Space))
     {
-        player->moveBy(speed, 0);
+        if (stack->currentWidget() == pantallaJuego)
+            player->saltar();
     }
 
+    teclasActivas.insert(event->key());
+}
 
-    // Detectar coliciones
-    QList<QGraphicsItem*> collisions =
-        player->collidingItems();
-
-    // Si hay colision
-    if(!collisions.isEmpty())
-    {
-        // Regresar posicion
-        player->setPos(oldX, oldY);
-    }
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    teclasActivas.remove(event->key());
 }

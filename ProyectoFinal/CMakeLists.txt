@@ -13,8 +13,6 @@ qt_add_executable(ProyectoFinal
     mainwindow.ui
     jugador.h jugador.cpp
     obstaculo.h obstaculo.cpp
-    Imagenes/Ozzy.png Imagenes/Skater.png
-
 )
 
 qt_add_resources(ProyectoFinal "resources"
@@ -36,7 +34,6 @@ target_link_libraries(ProyectoFinal
 )
 
 include(GNUInstallDirs)
-
 install(TARGETS ProyectoFinal
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
