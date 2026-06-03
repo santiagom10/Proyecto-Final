@@ -41,6 +41,8 @@ private:
     Jugador *player;
     QTimer *timerJuego;
 
+    QString personajeSeleccionado;
+
     QStackedWidget *stack;
     QWidget *menuPrincipal;
     QWidget *menuNiveles;
@@ -48,6 +50,7 @@ private:
     QWidget *pantallaJuego;
 
     std::vector<Obstaculo*> obstaculosNivel1;
+
 };
 
 #endif

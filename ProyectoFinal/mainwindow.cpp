@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Inicializar interfaz
     ui->setupUi(this);
 
+    personajeSeleccionado = ":/Imagenes/skater.png";
+
     // Tamaño de la ventana
     resize(1000,500);
 
@@ -391,6 +393,31 @@ MainWindow::MainWindow(QWidget *parent)
     // Crear jugador
     player = new Jugador();
 
+    // Cargar la imagen del personaje seleccionado por defecto
+    QPixmap pixmap(personajeSeleccionado);
+
+    if(pixmap.isNull())
+    {
+        qDebug() << "No se encontró la imagen inicial del jugador:" << personajeSeleccionado;
+        // Solo si falla, ponemos un cuadrado azul
+        QPixmap temp(50,50);
+        temp.fill(Qt::blue);
+        player->setPixmap(temp);
+    }
+    else
+    {
+        // Aplicamos el recorte
+        int anchoFrame = pixmap.width() / 7;
+        int altoFrame = pixmap.height() / 2;
+        QPixmap idle = pixmap.copy(0, 0, anchoFrame, altoFrame);
+
+        player->setPixmap(idle.scaled(90, 90, Qt::KeepAspectRatio, Qt::FastTransformation));
+
+
+
+    }
+
+    /*
     // Cargar imagen real (o temporal si no tienes)
     QPixmap pixmap(":/Imagenes/personaje1.png");
 
@@ -406,6 +433,9 @@ MainWindow::MainWindow(QWidget *parent)
     {
         player->setPixmap(pixmap.scaled(60,60));
     }
+    */
+
+
 
     // Posición inicial
     player->setPos(100,320);
@@ -478,25 +508,108 @@ MainWindow::MainWindow(QWidget *parent)
     connect(nivel1,
             &QPushButton::clicked,
 
-            [=](){
+            [=]()
+            {
+                qDebug() << personajeSeleccionado;
+
+                QPixmap sprite(personajeSeleccionado);
+
+                qDebug() << sprite.isNull();
+
+                if(!sprite.isNull())
+                {
+                    int anchoFrame =
+                        sprite.width() / 7;
+
+                    int altoFrame =
+                        sprite.height() / 2;
+
+                    QPixmap idle =
+                        sprite.copy(
+                            0,
+                            0,
+                            anchoFrame,
+                            altoFrame
+                            );
+
+                    player->setPixmap(
+                        idle.scaled(
+                            90,
+                            90,
+                            Qt::KeepAspectRatio,
+                            Qt::FastTransformation
+                            )
+                        );
+
+
+                    // Para comprobar si carga la imagen
+                    /*
+                    player->setPixmap(
+                        sprite.scaled(
+                            200,
+                            200,
+                            Qt::KeepAspectRatio,
+                            Qt::FastTransformation
+                            )
+                        );
+                    */
+
+                }
+                else
+                {
+                    qDebug() << "No se encontro el sprite";
+                }
+
+                player->setPos(100,320);
 
                 stack->setCurrentWidget(
                     pantallaJuego
                     );
-
             });
-
 
     // Nivel 2
     connect(nivel2,
             &QPushButton::clicked,
 
-            [=](){
+            [=]()
+            {
+                QPixmap sprite(personajeSeleccionado);
+
+                if(!sprite.isNull())
+                {
+                    int anchoFrame =
+                        sprite.width() / 7;
+
+                    int altoFrame =
+                        sprite.height() / 2;
+
+                    QPixmap idle =
+                        sprite.copy(
+                            0,
+                            0,
+                            anchoFrame,
+                            altoFrame
+                            );
+
+                    player->setPixmap(
+                        idle.scaled(
+                            90,
+                            90,
+                            Qt::KeepAspectRatio,
+                            Qt::FastTransformation
+                            )
+                        );
+                }
+                else
+                {
+                    qDebug() << "No se encontro el sprite";
+                }
+
+                player->setPos(100,320);
 
                 stack->setCurrentWidget(
                     pantallaJuego
                     );
-
             });
 
 
@@ -509,19 +622,35 @@ MainWindow::MainWindow(QWidget *parent)
                     menuPrincipal
                     );
             });
+
+    // Seleccionar Skater
+    connect(personaje1, &QPushButton::clicked, [=]() {
+        // Revisa si tu imagen se llama Skater.png o skater.png en el archivo .qrc
+        personajeSeleccionado = ":/Imagenes/Skater.png";
+        qDebug() << "Skater seleccionado";
+
+        stack->setCurrentWidget(menuNiveles);
+    });
+
+    // Seleccionar Ozzy
+    connect(personaje2, &QPushButton::clicked, [=]() {
+        // Revisa si tu imagen se llama Ozzy.png o ozzy.png en el archivo .qrc
+        personajeSeleccionado = ":/Imagenes/Ozzy.png";
+        qDebug() << "Ozzy seleccionado";
+
+        stack->setCurrentWidget(menuNiveles);
+    });
+
 }
 
 
 // Dstructor
-
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-
 // Movimiento del jugador
-
 void MainWindow::keyPressEvent(
     QKeyEvent *event)
 {
