@@ -55,6 +55,10 @@ private:
 
     std::vector<Obstaculo*> obstaculosNivel1;
 
+    QPixmap     bgPixmap;
+    qreal       bgOffset  = 0.0;
+    const qreal VEL_FONDO = 2.0;   // ajusta al gusto
+
     void iniciarNivel(int num);
 };
 

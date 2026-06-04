@@ -17,7 +17,7 @@ public:
     void detenerHorizontal();
     void saltar();
 
-    // Física (llamada cada tick del timer)
+    // Fisica (llamada cada tick del timer)
     void aplicarFisica();
 
     // Configuración
@@ -30,7 +30,7 @@ public:
     void actualizarSprite();   // llamar cada ~100ms para animar
 
 private:
-    // ── Física ──
+    // Fisica
     qreal velocidadX;
     qreal velocidadY;
     bool  enSueloFlag;
@@ -40,13 +40,13 @@ private:
     const qreal velocidadMaxX = 6.0;
     bool  mirrorX;
 
-    // ── Estados de animación ──
+    // Estados de animacion
     enum Estado { IDLE, CORRIENDO, SALTANDO, ATERRIZANDO };
     Estado estado;
     int    frameAnim;      // frame actual dentro del estado
     int    contadorAnim;   // ticks transcurridos para avanzar frame
 
-    // ── Spritesheet ──
+    // Spritesheet
     // 7 columnas x 2 filas, cada frame = 100x178 px
     QPixmap spriteFull;
     int fw, fh;            // ancho y alto de cada frame

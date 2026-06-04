@@ -24,7 +24,7 @@ Jugador::Jugador(QGraphicsItem *parent)
     fw(0), fh(0)
 {}
 
-// ── Carga el spritesheet y muestra el frame inicial ──────────
+// Carga el spritesheet y muestra el frame inicial
 void Jugador::cargarSprite(const QString &ruta)
 {
     spriteFull = QPixmap(ruta);
@@ -42,7 +42,7 @@ void Jugador::cargarSprite(const QString &ruta)
     aplicarFrameActual();
 }
 
-// ── Devuelve el frame (col, fila) listo para mostrar ─────────
+// Devuelve el frame (col, fila) listo para mostrar
 QPixmap Jugador::obtenerFrame(int col, int fila)
 {
     QPixmap frame = spriteFull.copy(col * fw, fila * fh, fw, fh);
@@ -53,7 +53,7 @@ QPixmap Jugador::obtenerFrame(int col, int fila)
     return frame;
 }
 
-// ── Aplica el frame que corresponde al estado actual ─────────
+// Aplica el frame que corresponde al estado actual
 void Jugador::aplicarFrameActual()
 {
     if (spriteFull.isNull() || fw == 0) return;
@@ -81,7 +81,7 @@ void Jugador::aplicarFrameActual()
     }
 }
 
-// ── Avanza la animación (llamar ~10 fps) ─────────────────────
+// Avanza la animación (llamar ~10 fps)
 void Jugador::actualizarSprite()
 {
     if (spriteFull.isNull()) return;
@@ -121,7 +121,7 @@ void Jugador::actualizarSprite()
     aplicarFrameActual();
 }
 
-// ── Movimiento ───────────────────────────────────────────────
+// Movimiento
 void Jugador::moverIzquierda()
 {
     velocidadX = -velocidadMaxX;
@@ -167,7 +167,7 @@ void Jugador::saltar()
     }
 }
 
-// ── Física (60 fps) ──────────────────────────────────────────
+// Física (60 fps)
 void Jugador::aplicarFisica()
 {
     // Gravedad
@@ -191,12 +191,13 @@ void Jugador::aplicarFisica()
     // Movimiento horizontal
     setX(x() + velocidadX);
 
-    // Límites laterales
+    // Limites laterales
     if (x() < 0)   setX(0);
     if (x() > 710) setX(710);
+
 }
 
-// ── Helpers ──────────────────────────────────────────────────
+// Helpers
 bool  Jugador::enSuelo() const   { return enSueloFlag; }
 void  Jugador::setSueloY(qreal y){ sueloY = y; }
 void  Jugador::detenerCaida()
