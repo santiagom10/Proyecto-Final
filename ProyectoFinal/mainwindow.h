@@ -16,6 +16,9 @@
 #include "obstaculo.h"
 #include <vector>
 
+#include "iaobstaculos.h"   // ← NUEVO
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -60,6 +63,8 @@ private:
     const qreal VEL_FONDO = 2.0;   // ajusta al gusto
 
     void iniciarNivel(int num);
+
+    IAObstaculos *ia = nullptr;   // ← NUEVO
 };
 
 #endif

@@ -13,6 +13,8 @@ qt_add_executable(ProyectoFinal
     mainwindow.ui
     jugador.h jugador.cpp
     obstaculo.h obstaculo.cpp
+    iaobstaculos.h
+    iaobstaculos.cpp
 )
 
 qt_add_resources(ProyectoFinal "resources"
@@ -26,6 +28,9 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Ozzy.png
         Imagenes/Skater.png
         Imagenes/FondoN1.png
+        Imagenes/Galleta.png
+        Imagenes/Caramelo.png
+        Imagenes/Paleta.png
 )
 
 target_link_libraries(ProyectoFinal

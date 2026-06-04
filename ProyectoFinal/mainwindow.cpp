@@ -1,125 +1,55 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-// Libreria para mostrar mensajes en la consola durante pruebas
 #include <QDebug>
-// Libreria para crear etiquetas de texto o imágenes
 #include <QLabel>
-// Libreria para organizar widgets horizontalmente
 #include <QHBoxLayout>
-// Libreria utilizada para dibujar imágenes y gráficos
 #include <QPainter>
 
-
 MainWindow::MainWindow(QWidget *parent)
-
     : QMainWindow(parent)
-
-    // Crea la interfaz generada por Qt Designer
     , ui(new Ui::MainWindow)
 {
-
-    // Carga todos los componentes definidos en el archivo .ui
     ui->setupUi(this);
 
-    // Define el personaje inicial que estará seleccionado
     personajeSeleccionado = ":/Imagenes/Skater.png";
-
-    // Establece el tamaño inicial de la ventana
     resize(1000, 600);
-
-    // Cambia el texto que aparece en la barra superior de la ventana
     setWindowTitle("Skate en el Universo de los Dulces");
 
-    // Crea un QStackedWidget
-    // varias pantallas y muestra una sola a la vez
     stack = new QStackedWidget(this);
-
     setCentralWidget(stack);
 
+    // MENU PRINCIPAL
     menuPrincipal = new QWidget();
-
-    // imagen fondo del menu principal
     menuPrincipal->setStyleSheet(
-
-        // Selecciona todos los widgets de esta pantalla
         "QWidget {"
-
-        // stretch stretch hace que la imagen ocupe todo
         "border-image: url(:/Imagenes/Fondo_menu.png) 0 0 0 0 stretch stretch;"
         "}"
         );
 
-
-
-    // Crea un layout vertical para organizar los botones uno debajo del otro
     QVBoxLayout *layoutMenu = new QVBoxLayout();
-
-    // Deja 20 pixeles de separacion entre widgets
     layoutMenu->setSpacing(20);
-
-    // Centra los widgets dentro del layout
     layoutMenu->setAlignment(Qt::AlignCenter);
 
-
-    // Crea el boton de jugar
     QPushButton *btnJugar = new QPushButton();
-
-    // Define el tamaño fijo del boton
     btnJugar->setFixedSize(400, 120);
-
     btnJugar->setStyleSheet(
-
         "QPushButton {"
-
         "border-image: url(:/Imagenes/Boton_inicio.png) 0 0 0 0 stretch stretch;"
-
-        // Hace transparente el fondo del botón
-        "background-color: transparent;"
-
-        // Elimina el borde estándar
-        "border: none;"
+        "background-color: transparent; border: none;"
         "}"
         );
 
-
-    // Crea el boton para cerrar el juego
     QPushButton *btnSalir = new QPushButton();
-
-    // Define el tamaño del boton
     btnSalir->setFixedSize(400, 120);
-
-    // Aplica estilos visuales
     btnSalir->setStyleSheet(
-
-        // Configuracion del botón
         "QPushButton {"
-
         "border-image: url(:/Imagenes/Boton_salir.png) 0 0 0 0 stretch stretch;"
-
-        // Fondo transparente
-        "background-color: transparent;"
-
-        // Sin borde
-        "border: none;"
-
-        // Fin de la regla
+        "background-color: transparent; border: none;"
         "}"
         );
 
-
-
-
-    // BOTONES AL MENÚ
-
-
-    // Inserta el boton jugar dentro del layout vertical
     layoutMenu->addWidget(btnJugar);
-
-    // Inserta el boton salir debajo
     layoutMenu->addWidget(btnSalir);
-
-    // Asigna el layout al menu principal
-    // Gracias a esto los botones aparecerán organizados
     menuPrincipal->setLayout(layoutMenu);
 
 
@@ -210,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent)
     menuPersonajes->setLayout(layoutPersonajes);
 
 
-    // ── MENU NIVELES ────────────────────────────────────────────────
+    // MENU NIVELES
     menuNiveles = new QWidget();
     menuNiveles->setStyleSheet("background-color: #1a1a2e;");
 
@@ -225,8 +155,8 @@ MainWindow::MainWindow(QWidget *parent)
         );
     tituloNiveles->setAlignment(Qt::AlignCenter);
 
-    QPushButton *nivel1        = new QPushButton("Nivel 1 – Ruta de Chocolate");
-    QPushButton *nivel2        = new QPushButton("Nivel 2 – Zona de Gelatina");
+    QPushButton *nivel1        = new QPushButton("Nivel 1 - Ruta de Chocolate");
+    QPushButton *nivel2        = new QPushButton("Nivel 2 - Zona de Gelatina");
     QPushButton *volverNiveles = new QPushButton("← Volver");
 
     nivel1->setFixedSize(380, 90);
@@ -270,10 +200,9 @@ MainWindow::MainWindow(QWidget *parent)
     view->setSceneRect(0, 0, 800, 500);
 
     player = new Jugador();
-    // coordenada suelo
     player->setSueloY(260);
     scene->addItem(player);
-    player->setPos(100, 320);
+    player->setPos(100, 260);
     player->cargarSprite(personajeSeleccionado);
 
     QVBoxLayout *layoutJuego = new QVBoxLayout();
@@ -347,7 +276,7 @@ MainWindow::~MainWindow()
 void MainWindow::iniciarNivel(int num)
 {
     player->cargarSprite(personajeSeleccionado);
-    player->setPos(100, 320);
+    player->setPos(100, 260);
     player->detenerCaida();
 
     QString rutaFondo = (num == 1) ? ":/Imagenes/FondoN1.png"
@@ -358,8 +287,7 @@ void MainWindow::iniciarNivel(int num)
         bgPixmap.fill(num == 1 ? QColor(100, 180, 100) : QColor(60, 200, 160));
     } else {
         bgPixmap = bgPixmap.scaled(
-            800,
-            500,
+            800, 500,
             Qt::IgnoreAspectRatio,
             Qt::SmoothTransformation
             );
@@ -369,6 +297,20 @@ void MainWindow::iniciarNivel(int num)
 
     stack->setCurrentWidget(pantallaJuego);
     setFocus();
+
+    if (!ia) {
+        ia = new IAObstaculos(scene, player, this);
+        connect(ia, &IAObstaculos::jugadorMurio, [this](){
+            timerJuego->stop();
+            timerAnim->stop();
+        });
+        connect(ia, &IAObstaculos::nivelCompletado, [this](){
+            timerJuego->stop();
+            timerAnim->stop();
+        });
+    }
+    ia->iniciar(60);
+
     timerJuego->start();
     timerAnim->start();
 }
@@ -377,6 +319,8 @@ void MainWindow::iniciarNivel(int num)
 void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
+
+    if (ia) ia->actualizar();
 
     bool moviendose = false;
 
@@ -407,17 +351,8 @@ void MainWindow::tickJuego()
     painter.end();
     scene->setBackgroundBrush(canvas);
 
-    // Colisiones
-    qreal ox = player->x();
-    qreal oy = player->y();
-
+    // Física del jugador
     player->aplicarFisica();
-
-    QList<QGraphicsItem*> cols = player->collidingItems();
-    if (!cols.isEmpty()) {
-        player->setPos(ox, oy);
-        player->detenerCaida();
-    }
 }
 
 
@@ -428,6 +363,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     {
         timerJuego->stop();
         timerAnim->stop();
+        if (ia) ia->detener();
         stack->setCurrentWidget(menuPrincipal);
         return;
     }
