@@ -32,6 +32,7 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Galleta.png
         Imagenes/Caramelo.png
         Imagenes/Paleta.png
+        Imagenes/Splash.png
 
 )
 

@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QTransform>
 
 // ─────────────────────────────────────────────────────────────
 //  Constructor
@@ -15,7 +16,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     personajeSeleccionado = ":/Imagenes/Skater.png";
-    resize(1000, 600);
+
+    // Ventana grande desde el inicio
+    resize(1280, 800);
     setWindowTitle("Skate en el Universo de los Dulces");
 
     stack = new QStackedWidget(this);
@@ -34,6 +37,12 @@ MainWindow::MainWindow(QWidget *parent)
     stack->addWidget(pantallaJuego);
     stack->setCurrentWidget(menuPrincipal);
 
+    // Cuando se cambie a la pantalla de juego, ajustar escala
+    connect(stack, &QStackedWidget::currentChanged, this, [this](int){
+        if (stack->currentWidget() == pantallaJuego)
+            ajustarEscalaVista();
+    });
+
     // Timers
     timerJuego = new QTimer(this);
     timerJuego->setInterval(16);   // ~60 fps
@@ -50,6 +59,39 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ajustarEscalaVista()
+//  Escala la QGraphicsView para ocupar todo el espacio disponible
+//  manteniendo la relación de aspecto 800:500 de la escena.
+// ─────────────────────────────────────────────────────────────
+void MainWindow::ajustarEscalaVista()
+{
+    if (!view || !pantallaJuego) return;
+
+    int wDisp = pantallaJuego->width();
+    int hDisp = pantallaJuego->height();
+
+    if (wDisp <= 0 || hDisp <= 0) return;
+
+    double escalaX = wDisp  / 800.0;
+    double escalaY = hDisp  / 500.0;
+    double escala  = qMin(escalaX, escalaY);
+
+    view->setFixedSize(qRound(800 * escala), qRound(500 * escala));
+    view->setTransform(QTransform::fromScale(escala, escala));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  resizeEvent()
+//  Re-escala la vista cuando el usuario redimensiona la ventana.
+// ─────────────────────────────────────────────────────────────
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+    if (stack && stack->currentWidget() == pantallaJuego)
+        ajustarEscalaVista();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -175,16 +217,7 @@ QWidget* MainWindow::crearMenuPersonajes()
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Pantalla de selección de dificultad (requisito del proyecto)
-//
-//  La dificultad afecta:
-//    • Velocidad inicial de los obstáculos
-//    • Frecuencia de aparición
-//    • Activación de físicas adicionales (parabólica/oscilatoria)
-//    • Cantidad de coleccionables disponibles
-//
-//  Esto NO se reduce a cortar tiempo ni aumentar contadores;
-//  cambia el modelo de decisión del agente IA.
+//  Pantalla de selección de dificultad
 // ─────────────────────────────────────────────────────────────
 QWidget* MainWindow::crearMenuDificultad()
 {
@@ -199,7 +232,6 @@ QWidget* MainWindow::crearMenuDificultad()
     titulo->setStyleSheet("color:white; font-size:30px; font-weight:bold; background:transparent;");
     titulo->setAlignment(Qt::AlignCenter);
 
-    // Descripción de cada nivel
     struct DifInfo { QString nombre; QString desc; QString color; int val; };
     QVector<DifInfo> difs = {
                              { "🍬 Fácil",    "Solo obstáculos lineales • Muchos coleccionables", "#27ae60", 1 },
@@ -211,7 +243,6 @@ QWidget* MainWindow::crearMenuDificultad()
         QPushButton *btn = new QPushButton();
         btn->setFixedSize(480, 80);
 
-        // Layout interno del botón con nombre + descripción
         QVBoxLayout *bly = new QVBoxLayout(btn);
         bly->setSpacing(2);
         bly->setAlignment(Qt::AlignCenter);
@@ -298,7 +329,7 @@ QWidget* MainWindow::crearMenuNiveles()
     w->setLayout(ly);
 
     connect(n1,  &QPushButton::clicked, [=](){ iniciarNivel(1); });
-    connect(n2, &QPushButton::clicked, [=](){ iniciarNivel(2);  });
+    connect(n2,  &QPushButton::clicked, [=](){ iniciarNivel(2); });
     connect(vol, &QPushButton::clicked, [=](){ stack->setCurrentWidget(menuDificultad); });
 
     return w;
@@ -316,8 +347,9 @@ QWidget* MainWindow::crearPantallaJuego()
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setFrameStyle(0);
-    view->setFixedSize(800, 500);
+    view->setRenderHint(QPainter::SmoothPixmapTransform); // imagen nítida al escalar
     view->setSceneRect(0, 0, 800, 500);
+    // No llamamos setFixedSize aquí; ajustarEscalaVista() lo maneja dinámicamente
 
     player = new Jugador();
     player->setSueloY(260);
@@ -348,15 +380,12 @@ void MainWindow::iniciarNivel(int num)
     if(nivelActual == 1)
     {
         rutaFondo = ":/Imagenes/FondoN1.png";
-
         player->setSueloY(380);
         player->setPos(100, 380);
     }
     else if(nivelActual == 2)
     {
         rutaFondo = ":/Imagenes/FondoN2.png";
-
-        // Posición para vista aérea
         player->setSueloY(380);
         player->setPos(360, 380);
     }
@@ -374,6 +403,7 @@ void MainWindow::iniciarNivel(int num)
     scene->setBackgroundBrush(bgPixmap);
 
     stack->setCurrentWidget(pantallaJuego);
+    // ajustarEscalaVista() se llama automáticamente vía currentChanged
     setFocus();
 
     if (!ia) {
@@ -381,7 +411,6 @@ void MainWindow::iniciarNivel(int num)
         connect(ia, &IAObstaculos::jugadorMurio, [this](){
             timerJuego->stop();
             timerAnim->stop();
-            // El mensaje ya se muestra en la escena; el jugador puede pulsar R o ESC
         });
         connect(ia, &IAObstaculos::nivelCompletado, [this](){
             timerJuego->stop();
@@ -411,6 +440,7 @@ void MainWindow::volverAlMenu()
     if (ia) ia->detener();
     stack->setCurrentWidget(menuPrincipal);
 }
+
 void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
@@ -428,28 +458,23 @@ void MainWindow::tickJuego()
     }
 
     if (!moviendose) player->detenerHorizontal();
+
     QPixmap canvas(800, 500);
     QPainter painter(&canvas);
 
     if(nivelActual == 1)
     {
-        // Nivel 1: movimiento horizontal
         bgOffset -= 2;
-
         if(bgOffset <= -800)
             bgOffset += 800;
-
         painter.drawPixmap(bgOffset, 0, bgPixmap);
         painter.drawPixmap(bgOffset + 800, 0, bgPixmap);
     }
     else if(nivelActual == 2)
     {
-        // Nivel 2: movimiento vertical (vista aérea)
         bgOffset += 2;
-
         if(bgOffset >= 500)
             bgOffset -= 500;
-
         painter.drawPixmap(0, bgOffset, bgPixmap);
         painter.drawPixmap(0, bgOffset - 500, bgPixmap);
     }
@@ -466,19 +491,16 @@ void MainWindow::tickJuego()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (stack->currentWidget() == pantallaJuego) {
-        // ESC → volver al menú
         if (event->key() == Qt::Key_Escape) {
             volverAlMenu();
             return;
         }
 
-        // R → reiniciar nivel actual
         if (event->key() == Qt::Key_R && !event->isAutoRepeat()) {
             reiniciarNivelActual();
             return;
         }
 
-        // Salto
         if (!event->isAutoRepeat() &&
             (event->key() == Qt::Key_W  ||
              event->key() == Qt::Key_Up ||

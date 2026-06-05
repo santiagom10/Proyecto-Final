@@ -1,6 +1,7 @@
 #include "iaobstaculos.h"
 #include "obstaculo.h"
 #include "jugador.h"
+#include <QPixmap>
 #include <QTimer>
 #include <QFont>
 #include <QDebug>
@@ -439,7 +440,48 @@ void IAObstaculos::verificarColisiones()
                 // Obstáculo dañino
                 bool golpeEfectivo = jugador->recibirGolpe();
                 if (golpeEfectivo) {
-                    // d) APRENDIZAJE: reforzar esta combinación
+                    QGraphicsPixmapItem *splash =
+                        new QGraphicsPixmapItem(
+                            QPixmap(":/Imagenes/Splash.png")
+                                .scaled(120, 120,
+                                        Qt::KeepAspectRatio,
+                                        Qt::SmoothTransformation));
+
+                    splash->setZValue(100);
+
+                    splash->setPos(
+                        jugador->x() - 20,
+                        jugador->y() - 20
+                    );
+
+                    scene->addItem(splash);
+                    scene->addItem(splash);
+
+                    QGraphicsTextItem *txt =
+                        new QGraphicsTextItem("-1");
+
+                    QFont fuente;
+                    fuente.setPointSize(18);
+                    fuente.setBold(true);
+
+                    txt->setFont(fuente);
+                    txt->setDefaultTextColor(Qt::red);
+                    txt->setZValue(101);
+
+                    txt->setPos(
+                        jugador->x() + 10,
+                        jugador->y() - 60
+                        );
+
+                    scene->addItem(txt);
+                    QTimer::singleShot(500, this, [=]()
+                    {
+                        scene->removeItem(splash);
+                        delete splash;
+
+                        scene->removeItem(txt);
+                        delete txt;
+                    });
                     TipoObst  t = static_cast<TipoObst>(o->data(0).toInt());
                     ModeloFis m = static_cast<ModeloFis>(o->data(1).toInt());
                     reforzarAprendizaje(t, m);
