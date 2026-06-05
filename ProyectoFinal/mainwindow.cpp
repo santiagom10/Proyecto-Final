@@ -269,7 +269,7 @@ QWidget* MainWindow::crearMenuNiveles()
     titulo->setAlignment(Qt::AlignCenter);
 
     QPushButton *n1  = new QPushButton("Nivel 1 - Ruta de Chocolate");
-    QPushButton *n2  = new QPushButton("Nivel 2 - Zona de Gelatina  (próximamente)");
+    QPushButton *n2  = new QPushButton("Nivel 2 - Zona de Gelatina");
     QPushButton *vol = new QPushButton("← Volver");
 
     n1->setFixedSize(380, 90);
@@ -285,7 +285,6 @@ QWidget* MainWindow::crearMenuNiveles()
         "QPushButton { background-color:#636e72; color:#b2bec3; font-size:18px;"
         "font-weight:bold; border-radius:12px; }"
         );
-    n2->setEnabled(false);
 
     vol->setStyleSheet(
         "QPushButton { background-color:#576574; color:white; border-radius:8px; font-size:16px; }"
@@ -299,6 +298,7 @@ QWidget* MainWindow::crearMenuNiveles()
     w->setLayout(ly);
 
     connect(n1,  &QPushButton::clicked, [=](){ iniciarNivel(1); });
+    connect(n2, &QPushButton::clicked, [=](){ iniciarNivel(2);  });
     connect(vol, &QPushButton::clicked, [=](){ stack->setCurrentWidget(menuDificultad); });
 
     return w;

@@ -28,9 +28,11 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Ozzy.png
         Imagenes/Skater.png
         Imagenes/FondoN1.png
+        Imagenes/FondoN2.png
         Imagenes/Galleta.png
         Imagenes/Caramelo.png
         Imagenes/Paleta.png
+
 )
 
 target_link_libraries(ProyectoFinal
