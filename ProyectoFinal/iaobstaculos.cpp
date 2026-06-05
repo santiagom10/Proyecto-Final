@@ -3,11 +3,17 @@
 #include "jugador.h"
 #include <QFont>
 #include <QDebug>
+#include <algorithm>
+#include <numeric>
 
+// ─────────────────────────────────────────────────────────────
+//  Constructor
+// ─────────────────────────────────────────────────────────────
 IAObstaculos::IAObstaculos(QGraphicsScene *scene, Jugador *jugador, QObject *parent)
     : QObject(parent),
     scene(scene),
     jugador(jugador),
+    dificultadInicial(1),
     nivelDificultad(1),
     ticksTranscurridos(0),
     intervalMinimo(1200),
@@ -22,49 +28,105 @@ IAObstaculos::IAObstaculos(QGraphicsScene *scene, Jugador *jugador, QObject *par
     timerSegundo = new QTimer(this);
     timerSegundo->setInterval(1000);
     connect(timerSegundo, &QTimer::timeout, this, &IAObstaculos::tickSegundo);
+
+    // Inicializar pesos de aprendizaje con valor neutro 1.0
+    // Clave = TipoObst * 10 + ModeloFis
+    for (int t = 0; t <= 2; t++)
+        for (int m = 0; m <= 2; m++)
+            pesosCombinacion[t * 10 + m] = 1.0;
+
+    // Conectar señales del jugador al HUD
+    connect(jugador, &Jugador::vidasCambiaron,    this, [this](int v){
+        if (textoVidas) textoVidas->setPlainText(QString("♥ x%1").arg(v));
+    });
+    connect(jugador, &Jugador::puntajeActualizado, this, [this](int p){
+        if (textoPuntos) textoPuntos->setPlainText(QString("⭐ %1").arg(p));
+        emit puntosActualizados(p);
+    });
 }
 
+void IAObstaculos::setDificultadInicial(int d)
+{
+    dificultadInicial = qBound(1, d, 3);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  iniciar()
+// ─────────────────────────────────────────────────────────────
 void IAObstaculos::iniciar(int segundosParaGanar)
 {
-    nivelDificultad    = 1;
+    nivelDificultad    = dificultadInicial;
     ticksTranscurridos = 0;
-    intervalMinimo     = 1200;
-    intervalMaximo     = 3000;
     segundosRestantes  = segundosParaGanar;
     terminado          = false;
     gano               = false;
+    obstaculosEnVistaReciente = 0;
+    colisionesRecientes       = 0;
 
+    // Ajustar intervalos según dificultad inicial
+    switch (dificultadInicial) {
+    case 1: intervalMinimo = 1400; intervalMaximo = 3200; break;
+    case 2: intervalMinimo = 1000; intervalMaximo = 2400; break;
+    case 3: intervalMinimo =  700; intervalMaximo = 1800; break;
+    }
+
+    // Limpiar obstáculos anteriores
     for (Obstaculo *o : listaObstaculos) {
         scene->removeItem(o);
         delete o;
     }
     listaObstaculos.clear();
 
-    if (textoTiempo) { scene->removeItem(textoTiempo); delete textoTiempo; textoTiempo = nullptr; }
-    if (fondoTiempo) { scene->removeItem(fondoTiempo); delete fondoTiempo; fondoTiempo = nullptr; }
-    if (textoFin)    { scene->removeItem(textoFin);    delete textoFin;    textoFin    = nullptr; }
-    if (textoSubFin) { scene->removeItem(textoSubFin); delete textoSubFin; textoSubFin = nullptr; }
-    if (fondoFin)    { scene->removeItem(fondoFin);    delete fondoFin;    fondoFin    = nullptr; }
+    limpiarHUD();
 
-    fondoTiempo = new QGraphicsRectItem(0, 0, 200, 44);
+    // ── HUD: tiempo ──────────────────────────────────────
+    fondoTiempo = new QGraphicsRectItem(270, 6, 260, 42);
     fondoTiempo->setBrush(QColor(0, 0, 0, 160));
     fondoTiempo->setPen(Qt::NoPen);
-    fondoTiempo->setPos(300, 10);
     fondoTiempo->setZValue(10);
     scene->addItem(fondoTiempo);
 
     textoTiempo = new QGraphicsTextItem();
     textoTiempo->setDefaultTextColor(Qt::white);
-    QFont font("Arial", 20, QFont::Bold);
-    textoTiempo->setFont(font);
-    textoTiempo->setPos(310, 12);
+    textoTiempo->setFont(QFont("Arial", 18, QFont::Bold));
+    textoTiempo->setPos(285, 10);
     textoTiempo->setZValue(11);
     scene->addItem(textoTiempo);
+
+    // ── HUD: vidas ───────────────────────────────────────
+    textoVidas = new QGraphicsTextItem();
+    textoVidas->setDefaultTextColor(QColor(255, 100, 100));
+    textoVidas->setFont(QFont("Arial", 18, QFont::Bold));
+    textoVidas->setPos(10, 10);
+    textoVidas->setZValue(11);
+    scene->addItem(textoVidas);
+    textoVidas->setPlainText(QString("♥ x%1").arg(jugador->getVidas()));
+
+    // ── HUD: puntos ──────────────────────────────────────
+    textoPuntos = new QGraphicsTextItem();
+    textoPuntos->setDefaultTextColor(QColor(255, 220, 50));
+    textoPuntos->setFont(QFont("Arial", 18, QFont::Bold));
+    textoPuntos->setPos(620, 10);
+    textoPuntos->setZValue(11);
+    scene->addItem(textoPuntos);
+    textoPuntos->setPlainText(QString("⭐ %1").arg(jugador->getPuntos()));
 
     actualizarHUD();
 
     timerDecision->start(decidirIntervalo());
     timerSegundo->start();
+}
+
+void IAObstaculos::limpiarHUD()
+{
+    auto borrar = [&](auto *&ptr){ if (ptr) { scene->removeItem(ptr); delete ptr; ptr = nullptr; } };
+    borrar(textoTiempo);
+    borrar(fondoTiempo);
+    borrar(textoVidas);
+    borrar(textoPuntos);
+    borrar(textoFin);
+    borrar(textoSubFin);
+    borrar(fondoFin);
 }
 
 void IAObstaculos::detener()
@@ -73,18 +135,23 @@ void IAObstaculos::detener()
     timerSegundo->stop();
 }
 
+// ─────────────────────────────────────────────────────────────
+//  actualizar()  –  llamado cada tick (60 fps)
+// ─────────────────────────────────────────────────────────────
 void IAObstaculos::actualizar()
 {
     if (terminado) return;
 
     ticksTranscurridos++;
 
+    // Mover cada obstáculo según su propia física
     for (Obstaculo *o : listaObstaculos)
-        o->setX(o->x() - (2.0 + nivelDificultad * 0.5));
+        o->actualizarFisica();
 
     limpiarObstaculosFueraDePantalla();
     verificarColisiones();
 
+    // Escalar dificultad cada 10 segundos (600 ticks a 60fps)
     if (ticksTranscurridos % 600 == 0)
         ajustarDificultad();
 }
@@ -97,6 +164,9 @@ std::vector<Obstaculo*>& IAObstaculos::obstaculos()
 bool IAObstaculos::juegoTerminado() const { return terminado; }
 bool IAObstaculos::jugadorGano()    const { return gano; }
 
+// ─────────────────────────────────────────────────────────────
+//  tickSegundo()
+// ─────────────────────────────────────────────────────────────
 void IAObstaculos::tickSegundo()
 {
     if (terminado) return;
@@ -114,89 +184,221 @@ void IAObstaculos::tickSegundo()
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  decidirObstaculo()  –  Razonamiento del agente
+//
+//  PERCEPCIÓN:  ¿Cuánto tiempo queda? ¿Cómo va el jugador?
+//  RAZONAMIENTO: elige combinación tipo+física ponderada por aprendizaje
+//  ACCIÓN:      genera el objeto con esa combinación
+// ─────────────────────────────────────────────────────────────
 void IAObstaculos::decidirObstaculo()
 {
     if (terminado) return;
 
-    TipoObstaculo tipo = decidirTipo();
-    qreal altura       = decidirAltura();
-    qreal x            = 820;
+    // ── a) PERCEPCIÓN ──────────────────────────────────
+    // Observar estado actual del jugador y del juego
+    bool jugadorEnPeligro = (jugador->getVidas() == 1);
+    bool tiempoEscaso     = (segundosRestantes < 15);
 
-    generarObstaculo(tipo, x, altura);
+    // ── b) RAZONAMIENTO ────────────────────────────────
+    // ¿Debe ser coleccionable? (más frecuentes al inicio y si el jugador tiene pocas vidas)
+    bool esColeccionable = debeSerColeccionable();
+
+    // Elegir combinación (tipo + física) usando pesos aprendidos
+    auto [tipo, modelo] = elegirCombinacionAprendida();
+
+    // Si el jugador está en peligro crítico, aumentar coleccionables para darle chance
+    if (jugadorEnPeligro && !tiempoEscaso) {
+        if (QRandomGenerator::global()->bounded(100) < 50)
+            esColeccionable = true;
+    }
+
+    // Forzar obstáculo (no coleccionable) si queda poco tiempo y el jugador va bien
+    if (tiempoEscaso && jugador->getPuntos() > 50) {
+        esColeccionable = false;
+    }
+
+    qreal altura = decidirAltura(modelo);
+
+    // ── c) ACCIÓN ──────────────────────────────────────
+    generarObstaculo(tipo, modelo, 820, altura, esColeccionable);
+
+    obstaculosEnVistaReciente++;
+    if (obstaculosEnVistaReciente > 10) {
+        obstaculosEnVistaReciente = 1;
+        colisionesRecientes       = 0;
+    }
+
     timerDecision->start(decidirIntervalo());
 }
 
-IAObstaculos::TipoObstaculo IAObstaculos::decidirTipo()
+// ─────────────────────────────────────────────────────────────
+//  reforzarAprendizaje()
+//
+//  d) APRENDIZAJE: cuando una combinación (tipo, física) logra
+//     golpear al jugador, incrementa su peso para ser elegida más.
+//     Usa decaimiento exponencial para evitar sobre-especialización.
+// ─────────────────────────────────────────────────────────────
+void IAObstaculos::reforzarAprendizaje(TipoObst tipo, ModeloFis modelo)
 {
-    int r = QRandomGenerator::global()->bounded(100);
+    int clave = tipo * 10 + modelo;
+    pesosCombinacion[clave] += 1.5;   // refuerzo positivo
 
-    if (nivelDificultad == 1) {
-        return GALLETA;
-    } else if (nivelDificultad == 2) {
-        return (r < 60) ? GALLETA : CARAMELO;
-    } else {
-        if (r < 40)      return GALLETA;
-        else if (r < 70) return CARAMELO;
-        else             return PALETA;
+    // Decaimiento suave en el resto para mantener diversidad
+    for (auto &par : pesosCombinacion) {
+        if (par.first != clave)
+            par.second *= 0.95;
+        // Peso mínimo para que ninguna combinación desaparezca del todo
+        par.second = qMax(par.second, 0.2);
     }
+
+    colisionesRecientes++;
+    qDebug() << "IA aprendizaje: clave" << clave
+             << "nuevo peso" << pesosCombinacion[clave];
 }
 
-qreal IAObstaculos::decidirAltura()
+// ─────────────────────────────────────────────────────────────
+//  elegirCombinacionAprendida()
+//
+//  Selección ponderada por pesos (ruleta ponderada / roulette wheel).
+//  Las combinaciones con mayor peso tienen más probabilidad de salir.
+// ─────────────────────────────────────────────────────────────
+std::pair<IAObstaculos::TipoObst, IAObstaculos::ModeloFis>
+IAObstaculos::elegirCombinacionAprendida()
 {
+    // En dificultad 1 solo usamos galletas lineales (introducción al juego)
     if (nivelDificultad == 1) {
-        return 280;
-    } else {
-        int r = QRandomGenerator::global()->bounded(100);
-        return (r < 70) ? 280 : 200;
+        return { OBS_GALLETA, FIS_LINEAL };
     }
+
+    // Construir lista de pesos solo para combinaciones habilitadas por dificultad
+    std::vector<std::pair<int, double>> candidatos;
+
+    for (int t = 0; t <= 2; t++) {
+        for (int m = 0; m <= 2; m++) {
+            // Nivel 2: habilitar física parabólica
+            // Nivel 3: habilitar también oscilatoria
+            if (m == 1 && nivelDificultad < 2) continue;
+            if (m == 2 && nivelDificultad < 3) continue;
+            candidatos.push_back({ t * 10 + m, pesosCombinacion[t * 10 + m] });
+        }
+    }
+
+    double total = 0;
+    for (auto &c : candidatos) total += c.second;
+
+    double r = QRandomGenerator::global()->generateDouble() * total;
+    double acum = 0;
+    for (auto &c : candidatos) {
+        acum += c.second;
+        if (r <= acum) {
+            int clave = c.first;
+            return { static_cast<TipoObst>(clave / 10),
+                    static_cast<ModeloFis>(clave % 10) };
+        }
+    }
+
+    return { OBS_GALLETA, FIS_LINEAL };
 }
 
-int IAObstaculos::decidirIntervalo()
-{
-    return QRandomGenerator::global()->bounded(intervalMinimo, intervalMaximo);
-}
-
-void IAObstaculos::ajustarDificultad()
-{
-    if (nivelDificultad < 3) nivelDificultad++;
-    intervalMinimo = qMax(500,  intervalMinimo - 200);
-    intervalMaximo = qMax(1200, intervalMaximo - 400);
-}
-
-void IAObstaculos::generarObstaculo(TipoObstaculo tipo, qreal x, qreal y)
+// ─────────────────────────────────────────────────────────────
+//  Generación de obstáculos y coleccionables
+// ─────────────────────────────────────────────────────────────
+void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
+                                    qreal x, qreal y, bool esColeccionable)
 {
     Obstaculo *o = new Obstaculo();
-    o->tipo = static_cast<Obstaculo::Tipo>(tipo);
+    o->esColeccionable = esColeccionable;
+    o->velocidadX      = 3.0 + nivelDificultad * 0.8;
 
-    switch (tipo) {
-    case GALLETA:
-        o->cargarSprite(":/Imagenes/Galleta.png", 60, 60);
+    // Asignar modelo físico
+    switch (modelo) {
+    case FIS_LINEAL:
+        o->modeloFisico = Obstaculo::FISICA_LINEAL;
         break;
-    case CARAMELO:
-        o->cargarSprite(":/Imagenes/Caramelo.png", 60, 60);
+    case FIS_PARABOLICA:
+        o->modeloFisico = Obstaculo::FISICA_PARABOLICA;
+        // Lanzamiento desde arriba con Vy inicial pequeña
+        o->velocidadY = QRandomGenerator::global()->bounded(10) * 0.3;
+        o->gravedad   = 0.3 + nivelDificultad * 0.05;
         break;
-    case PALETA:
-        o->cargarSprite(":/Imagenes/Paleta.png", 60, 60);
+    case FIS_OSCILATORIA:
+        o->modeloFisico = Obstaculo::FISICA_OSCILATORIA;
+        o->yBase       = y;
+        o->amplitud    = 40.0 + nivelDificultad * 10.0;
+        o->frecuencia  = 0.04 + nivelDificultad * 0.01;
+        o->fase        = QRandomGenerator::global()->generateDouble() * M_PI * 2;
         break;
     }
+
+    // Sprite según tipo
+    // Obstáculos dañinos → galleta
+    // Coleccionables     → caramelo (10 pts) o paleta (20 pts)
+    if (esColeccionable) {
+        bool esPaleta = (QRandomGenerator::global()->bounded(100) < 30);
+        o->tipo = esPaleta ? Obstaculo::PALETA : Obstaculo::CARAMELO;
+        o->cargarSprite(esPaleta ? ":/Imagenes/Paleta.png"
+                                 : ":/Imagenes/Caramelo.png", 50, 50);
+    } else {
+        o->tipo = Obstaculo::GALLETA;
+        o->cargarSprite(":/Imagenes/Galleta.png",
+                        50 + nivelDificultad * 5,
+                        50 + nivelDificultad * 5);
+    }
+
+    // Recordar la combinación para refuerzo posterior
+    o->setData(0, static_cast<int>(tipo));
+    o->setData(1, static_cast<int>(modelo));
 
     o->setPos(x, y);
     scene->addItem(o);
     listaObstaculos.push_back(o);
 }
 
+// ─────────────────────────────────────────────────────────────
+//  verificarColisiones()
+//
+//  Distingue entre obstáculos dañinos y coleccionables.
+//  Si el jugador choca con un obstáculo dañino Y no tiene
+//  invulnerabilidad activa: refuerza el aprendizaje de esa
+//  combinación (la IA aprendió que funcionó).
+// ─────────────────────────────────────────────────────────────
 void IAObstaculos::verificarColisiones()
 {
     QList<QGraphicsItem*> cols = jugador->collidingItems();
+
     for (QGraphicsItem *item : cols) {
-        for (Obstaculo *o : listaObstaculos) {
-            if (item == o) {
-                terminado = true;
-                detener();
-                mostrarMensajeFin(false);
-                emit jugadorMurio();
-                return;
+        for (auto it = listaObstaculos.begin(); it != listaObstaculos.end(); ++it) {
+            Obstaculo *o = *it;
+            if (item != o) continue;
+
+            if (o->esColeccionable) {
+                // Recoger item: dar puntos
+                int puntos = (o->tipo == Obstaculo::PALETA) ? 20 : 10;
+                jugador->recogerItem(puntos);
+                scene->removeItem(o);
+                delete o;
+                listaObstaculos.erase(it);
+                return;  // reiniciar iteración
+            } else {
+                // Obstáculo dañino
+                bool golpeEfectivo = jugador->recibirGolpe();
+                if (golpeEfectivo) {
+                    // d) APRENDIZAJE: reforzar esta combinación
+                    TipoObst  t = static_cast<TipoObst>(o->data(0).toInt());
+                    ModeloFis m = static_cast<ModeloFis>(o->data(1).toInt());
+                    reforzarAprendizaje(t, m);
+
+                    if (!jugador->estaVivo()) {
+                        terminado = true;
+                        detener();
+                        mostrarMensajeFin(false);
+                        emit jugadorMurio();
+                        return;
+                    }
+                }
             }
+            break;
         }
     }
 }
@@ -206,7 +408,7 @@ void IAObstaculos::limpiarObstaculosFueraDePantalla()
     listaObstaculos.erase(
         std::remove_if(listaObstaculos.begin(), listaObstaculos.end(),
                        [this](Obstaculo *o) {
-                           if (o->x() < -80) {
+                           if (o->fueraDePantalla()) {
                                scene->removeItem(o);
                                delete o;
                                return true;
@@ -217,42 +419,83 @@ void IAObstaculos::limpiarObstaculosFueraDePantalla()
         );
 }
 
+void IAObstaculos::ajustarDificultad()
+{
+    if (nivelDificultad < 3) nivelDificultad++;
+    intervalMinimo = qMax(500,  intervalMinimo - 200);
+    intervalMaximo = qMax(1200, intervalMaximo - 300);
+    qDebug() << "Dificultad subio a" << nivelDificultad;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Helpers de decisión
+// ─────────────────────────────────────────────────────────────
+bool IAObstaculos::debeSerColeccionable()
+{
+    // Al inicio más coleccionables, luego más obstáculos
+    // ~40% coleccionables en nivel 1, ~25% en nivel 3
+    int prob = qMax(15, 40 - (nivelDificultad - 1) * 8);
+    return QRandomGenerator::global()->bounded(100) < prob;
+}
+
+qreal IAObstaculos::decidirAltura(ModeloFis modelo)
+{
+    switch (modelo) {
+    case FIS_LINEAL:
+        // 70% al ras del suelo, 30% a media altura (hay que saltar)
+        return (QRandomGenerator::global()->bounded(100) < 70) ? 280 : 200;
+
+    case FIS_PARABOLICA:
+        // El obstáculo empieza arriba y cae: punto de entrada en Y arriba
+        return 80 + QRandomGenerator::global()->bounded(80);
+
+    case FIS_OSCILATORIA:
+        // Centro de la oscilación a media pantalla
+        return 220 + QRandomGenerator::global()->bounded(60);
+    }
+    return 280;
+}
+
+int IAObstaculos::decidirIntervalo()
+{
+    return QRandomGenerator::global()->bounded(intervalMinimo, intervalMaximo);
+}
+
 void IAObstaculos::actualizarHUD()
 {
-    if (!textoTiempo) return;
-    textoTiempo->setPlainText(QString("Tiempo: %1s").arg(segundosRestantes));
+    if (textoTiempo)
+        textoTiempo->setPlainText(QString("⏱ %1s").arg(segundosRestantes));
 }
 
 void IAObstaculos::mostrarMensajeFin(bool jugadorGano)
 {
-    fondoFin = new QGraphicsRectItem(150, 180, 500, 140);
-    fondoFin->setBrush(QColor(0, 0, 0, 200));
-    fondoFin->setPen(Qt::NoPen);
+    fondoFin = new QGraphicsRectItem(130, 170, 540, 160);
+    fondoFin->setBrush(QColor(0, 0, 0, 210));
+    fondoFin->setPen(QPen(jugadorGano ? QColor(255,220,0) : QColor(255,60,60), 3));
     fondoFin->setZValue(20);
     scene->addItem(fondoFin);
 
     textoFin = new QGraphicsTextItem();
     textoFin->setZValue(21);
-    QFont font("Arial", 32, QFont::Bold);
-    textoFin->setFont(font);
+    textoFin->setFont(QFont("Arial", 34, QFont::Bold));
 
     if (jugadorGano) {
         textoFin->setDefaultTextColor(QColor(255, 220, 0));
-        textoFin->setPlainText("  GANASTE!");
+        textoFin->setPlainText(QString("  ¡GANASTE!  ⭐%1 pts").arg(jugador->getPuntos()));
     } else {
         textoFin->setDefaultTextColor(QColor(255, 60, 60));
-        textoFin->setPlainText("  PERDISTE!");
+        textoFin->setPlainText("  ¡PERDISTE!");
     }
-    textoFin->setPos(190, 195);
+    textoFin->setPos(150, 185);
     scene->addItem(textoFin);
 
     textoSubFin = new QGraphicsTextItem();
     textoSubFin->setZValue(21);
-    QFont fontSub("Arial", 16);
-    textoSubFin->setFont(fontSub);
+    textoSubFin->setFont(QFont("Arial", 15));
     textoSubFin->setDefaultTextColor(Qt::white);
-    textoSubFin->setPlainText(jugadorGano ? "  Pasas al Nivel 2 - presiona ESC"
-                                          : "  Presiona ESC para volver al menu");
-    textoSubFin->setPos(190, 265);
+    textoSubFin->setPlainText(jugadorGano
+                                  ? "  [R] Reintentar   [ESC] Menú principal"
+                                  : "  [R] Reintentar   [ESC] Menú principal");
+    textoSubFin->setPos(150, 285);
     scene->addItem(textoSubFin);
 }

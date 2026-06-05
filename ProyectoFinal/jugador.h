@@ -5,6 +5,17 @@
 #include <QGraphicsPixmapItem>
 #include <QVector>
 
+// ─────────────────────────────────────────────────────────────
+//  Clase Jugador
+//
+//  Maneja movimiento, animación, física y estado del personaje.
+//  Se agrega:
+//    - Sistema de vidas (3 por defecto)
+//    - Puntuación
+//    - Frames de invulnerabilidad tras golpe (parpadeo)
+//    - señales para HUD
+// ─────────────────────────────────────────────────────────────
+
 class Jugador : public QObject, public QGraphicsPixmapItem
 {
     Q_OBJECT
@@ -27,7 +38,27 @@ public:
 
     // Sprite: cargar y animar
     void cargarSprite(const QString &ruta);
-    void actualizarSprite();   // llamar cada ~100ms para animar
+    void actualizarSprite();
+
+    // ─── Sistema de vidas y puntuación ───────────────────
+    int  getVidas()   const { return vidas; }
+    int  getPuntos()  const { return puntos; }
+
+    // Llamar cuando el jugador choca con un obstáculo dañino
+    // Retorna true si el golpe fue efectivo (no está en invulnerabilidad)
+    bool recibirGolpe();
+
+    // Llamar cuando el jugador recoge un coleccionable
+    void recogerItem(int valorPuntos = 10);
+
+    // Reiniciar estado para nuevo nivel/partida
+    void reiniciar();
+
+    bool estaVivo() const { return vidas > 0; }
+
+signals:
+    void vidasCambiaron(int nuevasVidas);
+    void puntajeActualizado(int nuevoPuntaje);
 
 private:
     // Fisica
@@ -40,21 +71,26 @@ private:
     const qreal velocidadMaxX = 6.0;
     bool  mirrorX;
 
+    // Vidas y puntos
+    int vidas  = 3;
+    int puntos = 0;
+
+    // Invulnerabilidad temporal tras golpe (en ticks a 60fps)
+    int  ticksInvulnerable  = 0;
+    const int TICKS_INVULN  = 90;  // 1.5 segundos
+
     // Estados de animacion
     enum Estado { IDLE, CORRIENDO, SALTANDO, ATERRIZANDO };
     Estado estado;
-    int    frameAnim;      // frame actual dentro del estado
-    int    contadorAnim;   // ticks transcurridos para avanzar frame
+    int    frameAnim;
+    int    contadorAnim;
 
     // Spritesheet
-    // 7 columnas x 2 filas, cada frame = 100x178 px
     QPixmap spriteFull;
-    int fw, fh;            // ancho y alto de cada frame
+    int fw, fh;
 
-    // Devuelve el frame (col, fila) escalado y con flip si hace falta
     QPixmap obtenerFrame(int col, int fila);
-
-    void aplicarFrameActual();
+    void    aplicarFrameActual();
 };
 
 #endif
