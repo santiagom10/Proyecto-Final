@@ -53,8 +53,11 @@ private:
     bool terminado;
     bool gano;
 
-    QGraphicsTextItem  *textoTiempo  = nullptr;
-    QGraphicsRectItem  *fondoTiempo  = nullptr;
+    QGraphicsTextItem  *textoTiempo   = nullptr;
+    QGraphicsRectItem  *fondoTiempo   = nullptr;
+    QGraphicsTextItem  *textoFin      = nullptr;
+    QGraphicsTextItem  *textoSubFin   = nullptr;
+    QGraphicsRectItem  *fondoFin      = nullptr;
 
     enum TipoObstaculo { GALLETA, CARAMELO, PALETA };
 

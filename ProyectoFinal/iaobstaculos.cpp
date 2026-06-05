@@ -40,8 +40,11 @@ void IAObstaculos::iniciar(int segundosParaGanar)
     }
     listaObstaculos.clear();
 
-    if (textoTiempo) { scene->removeItem(textoTiempo); textoTiempo = nullptr; }
-    if (fondoTiempo) { scene->removeItem(fondoTiempo); fondoTiempo = nullptr; }
+    if (textoTiempo) { scene->removeItem(textoTiempo); delete textoTiempo; textoTiempo = nullptr; }
+    if (fondoTiempo) { scene->removeItem(fondoTiempo); delete fondoTiempo; fondoTiempo = nullptr; }
+    if (textoFin)    { scene->removeItem(textoFin);    delete textoFin;    textoFin    = nullptr; }
+    if (textoSubFin) { scene->removeItem(textoSubFin); delete textoSubFin; textoSubFin = nullptr; }
+    if (fondoFin)    { scene->removeItem(fondoFin);    delete fondoFin;    fondoFin    = nullptr; }
 
     fondoTiempo = new QGraphicsRectItem(0, 0, 200, 44);
     fondoTiempo->setBrush(QColor(0, 0, 0, 160));
@@ -222,34 +225,34 @@ void IAObstaculos::actualizarHUD()
 
 void IAObstaculos::mostrarMensajeFin(bool jugadorGano)
 {
-    QGraphicsRectItem *fondo = new QGraphicsRectItem(150, 180, 500, 140);
-    fondo->setBrush(QColor(0, 0, 0, 200));
-    fondo->setPen(Qt::NoPen);
-    fondo->setZValue(20);
-    scene->addItem(fondo);
+    fondoFin = new QGraphicsRectItem(150, 180, 500, 140);
+    fondoFin->setBrush(QColor(0, 0, 0, 200));
+    fondoFin->setPen(Qt::NoPen);
+    fondoFin->setZValue(20);
+    scene->addItem(fondoFin);
 
-    QGraphicsTextItem *texto = new QGraphicsTextItem();
-    texto->setZValue(21);
+    textoFin = new QGraphicsTextItem();
+    textoFin->setZValue(21);
     QFont font("Arial", 32, QFont::Bold);
-    texto->setFont(font);
+    textoFin->setFont(font);
 
     if (jugadorGano) {
-        texto->setDefaultTextColor(QColor(255, 220, 0));
-        texto->setPlainText("  GANASTE!");
+        textoFin->setDefaultTextColor(QColor(255, 220, 0));
+        textoFin->setPlainText("  GANASTE!");
     } else {
-        texto->setDefaultTextColor(QColor(255, 60, 60));
-        texto->setPlainText("  PERDISTE!");
+        textoFin->setDefaultTextColor(QColor(255, 60, 60));
+        textoFin->setPlainText("  PERDISTE!");
     }
-    texto->setPos(190, 195);
-    scene->addItem(texto);
+    textoFin->setPos(190, 195);
+    scene->addItem(textoFin);
 
-    QGraphicsTextItem *sub = new QGraphicsTextItem();
-    sub->setZValue(21);
+    textoSubFin = new QGraphicsTextItem();
+    textoSubFin->setZValue(21);
     QFont fontSub("Arial", 16);
-    sub->setFont(fontSub);
-    sub->setDefaultTextColor(Qt::white);
-    sub->setPlainText(jugadorGano ? "  Pasas al Nivel 2 - presiona ESC"
-                                  : "  Presiona ESC para volver al menu");
-    sub->setPos(190, 265);
-    scene->addItem(sub);
+    textoSubFin->setFont(fontSub);
+    textoSubFin->setDefaultTextColor(Qt::white);
+    textoSubFin->setPlainText(jugadorGano ? "  Pasas al Nivel 2 - presiona ESC"
+                                          : "  Presiona ESC para volver al menu");
+    textoSubFin->setPos(190, 265);
+    scene->addItem(textoSubFin);
 }
