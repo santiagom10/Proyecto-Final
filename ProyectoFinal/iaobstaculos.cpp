@@ -1,6 +1,7 @@
 #include "iaobstaculos.h"
 #include "obstaculo.h"
 #include "jugador.h"
+#include <QTimer>
 #include <QFont>
 #include <QDebug>
 #include <algorithm>
@@ -36,7 +37,7 @@ IAObstaculos::IAObstaculos(QGraphicsScene *scene, Jugador *jugador, QObject *par
             pesosCombinacion[t * 10 + m] = 1.0;
 
     // Conectar señales del jugador al HUD
-    connect(jugador, &Jugador::vidasCambiaron,    this, [this](int v){
+    connect(jugador, &Jugador::vidasCambiaron, this, [this](int v){
         if (textoVidas) textoVidas->setPlainText(QString("♥ x%1").arg(v));
     });
     connect(jugador, &Jugador::puntajeActualizado, this, [this](int p){
@@ -119,7 +120,9 @@ void IAObstaculos::iniciar(int segundosParaGanar)
 
 void IAObstaculos::limpiarHUD()
 {
-    auto borrar = [&](auto *&ptr){ if (ptr) { scene->removeItem(ptr); delete ptr; ptr = nullptr; } };
+    auto borrar = [&](auto *&ptr){
+        if (ptr) { scene->removeItem(ptr); delete ptr; ptr = nullptr; }
+    };
     borrar(textoTiempo);
     borrar(fondoTiempo);
     borrar(textoVidas);
@@ -196,12 +199,10 @@ void IAObstaculos::decidirObstaculo()
     if (terminado) return;
 
     // ── a) PERCEPCIÓN ──────────────────────────────────
-    // Observar estado actual del jugador y del juego
     bool jugadorEnPeligro = (jugador->getVidas() == 1);
     bool tiempoEscaso     = (segundosRestantes < 15);
 
     // ── b) RAZONAMIENTO ────────────────────────────────
-    // ¿Debe ser coleccionable? (más frecuentes al inicio y si el jugador tiene pocas vidas)
     bool esColeccionable = debeSerColeccionable();
 
     // Elegir combinación (tipo + física) usando pesos aprendidos
@@ -220,8 +221,53 @@ void IAObstaculos::decidirObstaculo()
 
     qreal altura = decidirAltura(modelo);
 
+    // La parabólica ya no nace siempre al extremo derecho:
+    // aparece un poco más cerca del jugador y con variación horizontal,
+    // para que sí tenga interacción real y margen de esquiva.
+    qreal xInicial = 820;
+    if (modelo == FIS_PARABOLICA) {
+        xInicial = 200+ QRandomGenerator::global()->bounded(550); // 620..759
+    } else if (modelo == FIS_OSCILATORIA) {
+        xInicial = 780 + QRandomGenerator::global()->bounded(50);  // 780..829
+    }
+
     // ── c) ACCIÓN ──────────────────────────────────────
-    generarObstaculo(tipo, modelo, 820, altura, esColeccionable);
+
+    if (modelo == FIS_PARABOLICA)
+    {
+        QGraphicsTextItem *aviso = new QGraphicsTextItem("⚠");
+
+        aviso->setDefaultTextColor(Qt::red);
+        aviso->setFont(QFont("Arial", 28, QFont::Bold));
+        aviso->setZValue(50);
+
+        aviso->setPos(xInicial, altura);
+
+        scene->addItem(aviso);
+
+        QTimer::singleShot(700, this, [=]()
+                           {
+                               if (scene)
+                               {
+                                   scene->removeItem(aviso);
+                                   delete aviso;
+                               }
+
+                               generarObstaculo(tipo,
+                                                modelo,
+                                                xInicial,
+                                                altura,
+                                                esColeccionable);
+                           });
+    }
+    else
+    {
+        generarObstaculo(tipo,
+                         modelo,
+                         xInicial,
+                         altura,
+                         esColeccionable);
+    }
 
     obstaculosEnVistaReciente++;
     if (obstaculosEnVistaReciente > 10) {
@@ -309,19 +355,28 @@ void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
 {
     Obstaculo *o = new Obstaculo();
     o->esColeccionable = esColeccionable;
-    o->velocidadX      = 3.0 + nivelDificultad * 0.8;
+
+    // La velocidad general sigue escalando con dificultad,
+    // pero la parabólica va un poco más lenta para que sea esquivable.
+    if (modelo == FIS_PARABOLICA) {
+        o->velocidadX = 2.1 + nivelDificultad * 0.35;
+    } else {
+        o->velocidadX = 3.0 + nivelDificultad * 0.8;
+    }
 
     // Asignar modelo físico
     switch (modelo) {
     case FIS_LINEAL:
         o->modeloFisico = Obstaculo::FISICA_LINEAL;
         break;
+
     case FIS_PARABOLICA:
         o->modeloFisico = Obstaculo::FISICA_PARABOLICA;
-        // Lanzamiento desde arriba con Vy inicial pequeña
-        o->velocidadY = QRandomGenerator::global()->bounded(10) * 0.3;
-        o->gravedad   = 0.3 + nivelDificultad * 0.05;
+        // Lanzamiento más suave: empieza con caída lenta y gravedad menor
+        o->velocidadY = 0.0;
+        o->gravedad   = 0.08;
         break;
+
     case FIS_OSCILATORIA:
         o->modeloFisico = Obstaculo::FISICA_OSCILATORIA;
         o->yBase       = y;
@@ -342,8 +397,8 @@ void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
     } else {
         o->tipo = Obstaculo::GALLETA;
         o->cargarSprite(":/Imagenes/Galleta.png",
-                        50 + nivelDificultad * 5,
-                        50 + nivelDificultad * 5);
+                        70 + nivelDificultad * 5,
+                        70 + nivelDificultad * 5);
     }
 
     // Recordar la combinación para refuerzo posterior
@@ -443,15 +498,15 @@ qreal IAObstaculos::decidirAltura(ModeloFis modelo)
     switch (modelo) {
     case FIS_LINEAL:
         // 70% al ras del suelo, 30% a media altura (hay que saltar)
-        return (QRandomGenerator::global()->bounded(100) < 70) ? 280 : 200;
+        return (QRandomGenerator::global()->bounded(100) < 70) ? 400 : 330;
 
     case FIS_PARABOLICA:
         // El obstáculo empieza arriba y cae: punto de entrada en Y arriba
-        return 80 + QRandomGenerator::global()->bounded(80);
+        return 20 + QRandomGenerator::global()->bounded(80);
 
     case FIS_OSCILATORIA:
         // Centro de la oscilación a media pantalla
-        return 220 + QRandomGenerator::global()->bounded(60);
+        return 320 + QRandomGenerator::global()->bounded(60);
     }
     return 280;
 }

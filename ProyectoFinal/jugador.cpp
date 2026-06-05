@@ -128,8 +128,11 @@ void Jugador::saltar()
 
 void Jugador::aplicarFisica()
 {
-    // Bajar contador de invulnerabilidad
-    if (ticksInvulnerable > 0) ticksInvulnerable--;
+    // Bajar contador de invulnerabilidad y actualizar parpadeo a 60 fps
+    if (ticksInvulnerable > 0) {
+        ticksInvulnerable--;
+        aplicarFrameActual();   // refresca la opacidad cada tick, no solo cada 100 ms
+    }
 
     // Gravedad
     velocidadY += gravedad;

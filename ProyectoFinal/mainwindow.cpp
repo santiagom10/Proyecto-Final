@@ -340,12 +340,27 @@ QWidget* MainWindow::crearPantallaJuego()
 void MainWindow::iniciarNivel(int num)
 {
     nivelActual = num;
-
     player->reiniciar();
     player->cargarSprite(personajeSeleccionado);
-    player->setPos(100, 260);
 
-    QString rutaFondo = ":/Imagenes/FondoN1.png";
+    QString rutaFondo;
+
+    if(nivelActual == 1)
+    {
+        rutaFondo = ":/Imagenes/FondoN1.png";
+
+        player->setSueloY(380);
+        player->setPos(100, 380);
+    }
+    else if(nivelActual == 2)
+    {
+        rutaFondo = ":/Imagenes/FondoN2.png";
+
+        // Posición para vista aérea
+        player->setSueloY(380);
+        player->setPos(360, 380);
+    }
+
     bgPixmap = QPixmap(rutaFondo);
     if (bgPixmap.isNull()) {
         bgPixmap = QPixmap(800, 500);
@@ -396,10 +411,6 @@ void MainWindow::volverAlMenu()
     if (ia) ia->detener();
     stack->setCurrentWidget(menuPrincipal);
 }
-
-// ─────────────────────────────────────────────────────────────
-//  tickJuego()  –  loop principal del juego
-// ─────────────────────────────────────────────────────────────
 void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
@@ -417,15 +428,32 @@ void MainWindow::tickJuego()
     }
 
     if (!moviendose) player->detenerHorizontal();
-
-    // Scroll del fondo
-    bgOffset -= VEL_FONDO;
-    if (bgOffset <= -800) bgOffset += 800;
-
     QPixmap canvas(800, 500);
     QPainter painter(&canvas);
-    painter.drawPixmap(bgOffset, 0, bgPixmap);
-    painter.drawPixmap(bgOffset + 800, 0, bgPixmap);
+
+    if(nivelActual == 1)
+    {
+        // Nivel 1: movimiento horizontal
+        bgOffset -= 2;
+
+        if(bgOffset <= -800)
+            bgOffset += 800;
+
+        painter.drawPixmap(bgOffset, 0, bgPixmap);
+        painter.drawPixmap(bgOffset + 800, 0, bgPixmap);
+    }
+    else if(nivelActual == 2)
+    {
+        // Nivel 2: movimiento vertical (vista aérea)
+        bgOffset += 2;
+
+        if(bgOffset >= 500)
+            bgOffset -= 500;
+
+        painter.drawPixmap(0, bgOffset, bgPixmap);
+        painter.drawPixmap(0, bgOffset - 500, bgPixmap);
+    }
+
     painter.end();
     scene->setBackgroundBrush(canvas);
 
