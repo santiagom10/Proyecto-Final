@@ -8,9 +8,6 @@
 #include <QMessageBox>
 #include <stdexcept>
 
-// ─────────────────────────────────────────────────────────────
-//  Constructor
-// ─────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -59,9 +56,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  ajustarEscalaVista()
-// ─────────────────────────────────────────────────────────────
 void MainWindow::ajustarEscalaVista()
 {
     if (!view || !pantallaJuego) return;
@@ -78,9 +72,6 @@ void MainWindow::ajustarEscalaVista()
     view->setTransform(QTransform::fromScale(escala, escala));
 }
 
-// ─────────────────────────────────────────────────────────────
-//  resizeEvent()
-// ─────────────────────────────────────────────────────────────
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
@@ -88,9 +79,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
         ajustarEscalaVista();
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Construcción de pantallas
-// ─────────────────────────────────────────────────────────────
 QWidget* MainWindow::crearMenuPrincipal()
 {
     QWidget *w = new QWidget();
@@ -336,66 +324,127 @@ QWidget* MainWindow::crearPantallaJuego()
 
     return w;
 }
-
-// ─────────────────────────────────────────────────────────────
-//  iniciarNivel()
-// ─────────────────────────────────────────────────────────────
 void MainWindow::iniciarNivel(int num)
 {
     nivelActual = num;
+
     player->reiniciar();
 
-    // Cargar sprite del personaje (con manejo de excepción)
-    try {
+    timerJuego->stop();
+    timerAnim->stop();
+
+    if (ia)
+    {
+        ia->detener();
+        delete ia;
+        ia = nullptr;
+    }
+
+    if (dron)
+    {
+        dron->detener();
+        delete dron;
+        dron = nullptr;
+    }
+
+    QList<QGraphicsItem*> items = scene->items();
+
+    for (QGraphicsItem* item : items)
+    {
+        if (item != player)
+        {
+            scene->removeItem(item);
+            delete item;
+        }
+    }
+    try
+    {
         player->cargarSprite(personajeSeleccionado);
     }
-    catch (const std::runtime_error &e) {
-        QMessageBox::warning(this, "Error de sprite",
-                             QString("No se pudo cargar el personaje:\n%1\n\n"
-                                     "Se usará el personaje por defecto.").arg(e.what()));
-        try {
+    catch (const std::runtime_error &e)
+    {
+        QMessageBox::warning(
+            this,
+            "Error de sprite",
+            QString(
+                "No se pudo cargar el personaje:\n%1\n\n"
+                "Se usará el personaje por defecto."
+                ).arg(e.what())
+            );
+
+        try
+        {
             player->cargarSprite(":/Imagenes/Skater.png");
         }
-        catch (...) {
+        catch (...)
+        {
             qDebug() << "No se pudo cargar ningún sprite.";
         }
     }
-
-    // ── NIVEL 1 ──────────────────────────────────────────────
-    if (nivelActual == 1) {
-
-        if (dron) dron->detener();
-
+    if (nivelActual == 1)
+    {
         player->setSueloY(380);
         player->setPos(100, 380);
 
         bgPixmap = QPixmap(":/Imagenes/FondoN1.png");
-        if (bgPixmap.isNull()) {
+
+        if (bgPixmap.isNull())
+        {
             bgPixmap = QPixmap(800, 500);
             bgPixmap.fill(QColor(100, 180, 100));
-        } else {
-            bgPixmap = bgPixmap.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
+        else
+        {
+            bgPixmap = bgPixmap.scaled(
+                800,
+                500,
+                Qt::IgnoreAspectRatio,
+                Qt::SmoothTransformation
+                );
+        }
+
         bgOffset = 0.0;
         scene->setBackgroundBrush(bgPixmap);
 
         stack->setCurrentWidget(pantallaJuego);
         setFocus();
 
-        if (!ia) {
-            ia = new IAObstaculos(scene, player, this);
-            connect(ia, &IAObstaculos::jugadorMurio,    [this](){ timerJuego->stop(); timerAnim->stop(); });
-            connect(ia, &IAObstaculos::nivelCompletado, [this](){ timerJuego->stop(); timerAnim->stop(); });
-        }
+        ia = new IAObstaculos(scene, player, this);
+
+        connect(
+            ia,
+            &IAObstaculos::jugadorMurio,
+            [this]()
+            {
+                timerJuego->stop();
+                timerAnim->stop();
+            });
+
+        connect(
+            ia,
+            &IAObstaculos::nivelCompletado,
+            [this]()
+            {
+                timerJuego->stop();
+                timerAnim->stop();
+            });
 
         ia->setDificultadInicial(dificultadSel);
 
-        try {
+        try
+        {
             ia->iniciar(60);
         }
-        catch (const std::runtime_error &e) {
-            QMessageBox::critical(this, "Error al iniciar nivel",
-                                  QString("No se pudo iniciar el nivel:\n%1").arg(e.what()));
+        catch (const std::runtime_error &e)
+        {
+            QMessageBox::critical(
+                this,
+                "Error al iniciar nivel",
+                QString(
+                    "No se pudo iniciar el nivel:\n%1"
+                    ).arg(e.what())
+                );
+
             volverAlMenu();
             return;
         }
@@ -403,37 +452,58 @@ void MainWindow::iniciarNivel(int num)
         timerJuego->start();
         timerAnim->start();
     }
-
-    // ── NIVEL 2 ──────────────────────────────────────────────
-    else if (nivelActual == 2) {
-
-        if (ia) ia->detener();
-
-        // Vista cenital — sin física de gravedad
+    else if (nivelActual == 2)
+    {
         player->setSueloY(9999);
         player->setPos(380, 280);
 
-        // Fondo con imagen FondoN2.png
         bgPixmap = QPixmap(":/Imagenes/FondoN2.png");
-        if (bgPixmap.isNull()) {
+
+        if (bgPixmap.isNull())
+        {
             bgPixmap = QPixmap(800, 500);
             bgPixmap.fill(QColor(30, 140, 100));
-        } else {
-            bgPixmap = bgPixmap.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
+        else
+        {
+            bgPixmap = bgPixmap.scaled(
+                800,
+                500,
+                Qt::IgnoreAspectRatio,
+                Qt::SmoothTransformation
+                );
+        }
+
         bgOffset = 0.0;
         scene->setBackgroundBrush(bgPixmap);
 
         stack->setCurrentWidget(pantallaJuego);
         setFocus();
 
-        if (!dron) {
-            dron = new DronIA(scene, player, dificultadSel, this);
-            connect(dron, &DronIA::jugadorMurio,
-                    [this](){ timerJuego->stop(); timerAnim->stop(); });
-            connect(dron, &DronIA::nivelCompletado,
-                    [this](){ timerJuego->stop(); timerAnim->stop(); });
-        }
+        dron = new DronIA(
+            scene,
+            player,
+            dificultadSel,
+            this
+            );
+
+        connect(
+            dron,
+            &DronIA::jugadorMurio,
+            [this]()
+            {
+                timerJuego->stop();
+                timerAnim->stop();
+            });
+
+        connect(
+            dron,
+            &DronIA::nivelCompletado,
+            [this]()
+            {
+                timerJuego->stop();
+                timerAnim->stop();
+            });
 
         dron->setDificultad(dificultadSel);
         dron->iniciar();
@@ -443,9 +513,6 @@ void MainWindow::iniciarNivel(int num)
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  reiniciarNivelActual()
-// ─────────────────────────────────────────────────────────────
 void MainWindow::reiniciarNivelActual()
 {
     timerJuego->stop();
@@ -456,9 +523,6 @@ void MainWindow::reiniciarNivelActual()
     iniciarNivel(nivelActual);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  volverAlMenu()
-// ─────────────────────────────────────────────────────────────
 void MainWindow::volverAlMenu()
 {
     timerJuego->stop();
@@ -468,9 +532,6 @@ void MainWindow::volverAlMenu()
     stack->setCurrentWidget(menuPrincipal);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  tickJuego()  — loop principal (~60fps)
-// ─────────────────────────────────────────────────────────────
 void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
@@ -544,9 +605,6 @@ void MainWindow::tickJuego()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Eventos de teclado
-// ─────────────────────────────────────────────────────────────
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (stack->currentWidget() == pantallaJuego) {
