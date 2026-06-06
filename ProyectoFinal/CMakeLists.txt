@@ -37,6 +37,7 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Splash.png
         Imagenes/Charco.png
         Imagenes/Dron.png
+
 )
 
 target_link_libraries(ProyectoFinal

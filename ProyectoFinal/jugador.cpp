@@ -54,52 +54,105 @@ QPixmap Jugador::obtenerFrame(int col, int fila)
 
 void Jugador::aplicarFrameActual()
 {
-    if (spriteFull.isNull() || fw == 0) return;
+    if (spriteFull.isNull() || fw == 0)
+        return;
 
-    if (ticksInvulnerable > 0 && (ticksInvulnerable / 6) % 2 == 0) {
+    if (ticksInvulnerable > 0 && (ticksInvulnerable / 6) % 2 == 0)
         setOpacity(0.3);
-    } else {
+    else
         setOpacity(1.0);
-    }
 
-    switch (estado) {
+    switch (estado)
+    {
     case IDLE:
-        setPixmap(obtenerFrame(0, 1));
+
+        if(modoPatineta)
+        {
+            // Patineta quieta
+            setPixmap(obtenerFrame(0,1));
+        }
+        else
+        {
+            // Quieto parado
+            setPixmap(obtenerFrame(0,0));
+        }
+
         break;
+
     case CORRIENDO:
-        setPixmap(obtenerFrame(frameAnim % 2, 1));
+
+        if(modoPatineta)
+        {
+            // Ride1 ↔ Ride2
+            if(frameAnim % 2 == 0)
+                setPixmap(obtenerFrame(0,1));
+            else
+                setPixmap(obtenerFrame(1,1));
+        }
+        else
+        {
+            // Walk1 ↔ Walk2
+            if(frameAnim % 2 == 0)
+                setPixmap(obtenerFrame(1,0));
+            else
+                setPixmap(obtenerFrame(2,0));
+        }
+
         break;
+
     case SALTANDO:
-        setPixmap(obtenerFrame(2 + (frameAnim % 2), 1));
+
+        // Sprite de salto
+        setPixmap(obtenerFrame(5,0));
+
         break;
+
     case ATERRIZANDO:
-        setPixmap(obtenerFrame(4, 1));
+
+        // Sprite de aterrizaje
+        setPixmap(obtenerFrame(4,1));
+
         break;
     }
 }
 
 void Jugador::actualizarSprite()
 {
-    if (spriteFull.isNull()) return;
+    if (spriteFull.isNull())
+        return;
+
     contadorAnim++;
 
-    switch (estado) {
+    switch (estado)
+    {
     case IDLE:
         break;
+
     case CORRIENDO:
-        if (contadorAnim >= 2) { contadorAnim = 0; frameAnim++; }
-        break;
-    case SALTANDO:
-        if (contadorAnim >= 2) { contadorAnim = 0; frameAnim++; }
-        break;
-    case ATERRIZANDO:
-        if (contadorAnim >= 3) {
+
+        if(contadorAnim >= 4)
+        {
             contadorAnim = 0;
-            estado    = IDLE;
+            frameAnim++;
+        }
+
+        break;
+
+    case SALTANDO:
+        break;
+
+    case ATERRIZANDO:
+
+        if(contadorAnim >= 8)
+        {
+            estado = IDLE;
+            contadorAnim = 0;
             frameAnim = 0;
         }
+
         break;
     }
+
     aplicarFrameActual();
 }
 
@@ -120,7 +173,6 @@ void Jugador::moverDerecha()
         estado = CORRIENDO; frameAnim = 0; contadorAnim = 0;
     }
 }
-
 void Jugador::detenerHorizontal()
 {
     velocidadX = 0;
@@ -129,7 +181,42 @@ void Jugador::detenerHorizontal()
         aplicarFrameActual();
     }
 }
+void Jugador::setModoPatineta(bool activo)
+{
+    modoPatineta = activo;
+}
+void Jugador::mirarIzquierda()
+{
+    mirrorX = true;
+    aplicarFrameActual();
+}
 
+void Jugador::mirarDerecha()
+{
+    mirrorX = false;
+    aplicarFrameActual();
+}
+void Jugador::animarMovimientoTopDown(bool moviendo)
+{
+    if(moviendo)
+    {
+        if(estado != CORRIENDO)
+        {
+            estado = CORRIENDO;
+            frameAnim = 0;
+            contadorAnim = 0;
+        }
+    }
+    else
+    {
+        if(estado != IDLE)
+        {
+            estado = IDLE;
+            frameAnim = 0;
+            contadorAnim = 0;
+        }
+    }
+}
 void Jugador::saltar()
 {
     if (enSueloFlag) {

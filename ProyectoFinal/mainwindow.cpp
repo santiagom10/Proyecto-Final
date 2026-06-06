@@ -381,6 +381,7 @@ void MainWindow::iniciarNivel(int num)
     }
     if (nivelActual == 1)
     {
+        player->setModoPatineta(true);
         player->setSueloY(380);
         player->setPos(100, 380);
 
@@ -452,6 +453,7 @@ void MainWindow::iniciarNivel(int num)
     }
     else if (nivelActual == 2)
     {
+        player->setModoPatineta(false);
         player->setSueloY(9999);
         player->setPos(380, 280);
 
@@ -535,70 +537,121 @@ void MainWindow::tickJuego()
     if (stack->currentWidget() != pantallaJuego) return;
 
     // ── Actualizar agente del nivel activo ───────────────────
-    if (nivelActual == 1 && ia)   ia->actualizar();
-    if (nivelActual == 2 && dron) dron->actualizar();
+    if (nivelActual == 1 && ia)
+        ia->actualizar();
 
-    // ── Factor de velocidad: reducido si el jugador está en charco ──
-    const qreal VEL_BASE   = 6.0;
-    qreal factorCharco     = (nivelActual == 2 && dron)
-                             ? dron->factorVelocidadJugador()
-                             : 1.0;
+    if (nivelActual == 2 && dron)
+        dron->actualizar();
+
+    // ── Factor de velocidad si está en charco ────────────────
+    const qreal VEL_BASE = 6.0;
+
+    qreal factorCharco =
+        (nivelActual == 2 && dron)
+            ? dron->factorVelocidadJugador()
+            : 1.0;
+
     qreal velH = VEL_BASE * factorCharco;
 
-    // ── Movimiento horizontal ────────────────────────────────
     bool moviendose = false;
 
-    if (teclasActivas.contains(Qt::Key_A) || teclasActivas.contains(Qt::Key_Left)) {
-        if (nivelActual == 2) {
-            // Vista cenital: mover directamente con setX
+    // ── Movimiento horizontal ────────────────────────────────
+    if (teclasActivas.contains(Qt::Key_A) ||
+        teclasActivas.contains(Qt::Key_Left))
+    {
+        if (nivelActual == 2)
+        {
+            player->mirarIzquierda();
+
             qreal nx = player->x() - velH;
-            if (nx >= 10) player->setX(nx);
-        } else {
+
+            if (nx >= 10)
+                player->setX(nx);
+
+            moviendose = true;
+        }
+        else
+        {
             player->moverIzquierda();
+            moviendose = true;
         }
-        moviendose = true;
-    } else if (teclasActivas.contains(Qt::Key_D) || teclasActivas.contains(Qt::Key_Right)) {
-        if (nivelActual == 2) {
+    }
+    else if (teclasActivas.contains(Qt::Key_D) ||
+             teclasActivas.contains(Qt::Key_Right))
+    {
+        if (nivelActual == 2)
+        {
+            player->mirarDerecha();
+
             qreal nx = player->x() + velH;
-            if (nx <= 740) player->setX(nx);
-        } else {
+
+            if (nx <= 740)
+                player->setX(nx);
+
+            moviendose = true;
+        }
+        else
+        {
             player->moverDerecha();
+            moviendose = true;
         }
-        moviendose = true;
     }
 
-    if (!moviendose && nivelActual == 1) player->detenerHorizontal();
+    if (!moviendose && nivelActual == 1)
+        player->detenerHorizontal();
 
-    // ── Movimiento vertical libre (solo nivel 2 — vista cenital) ──
-    if (nivelActual == 2) {
+    // ── Movimiento vertical (nivel 2) ───────────────────────
+    if (nivelActual == 2)
+    {
         qreal velV = VEL_BASE * factorCharco;
-        if (teclasActivas.contains(Qt::Key_W) || teclasActivas.contains(Qt::Key_Up)) {
+
+        if (teclasActivas.contains(Qt::Key_W) ||
+            teclasActivas.contains(Qt::Key_Up))
+        {
             qreal ny = player->y() - velV;
-            if (ny >= 60) player->setY(ny);
-        } else if (teclasActivas.contains(Qt::Key_S) || teclasActivas.contains(Qt::Key_Down)) {
-            qreal ny = player->y() + velV;
-            if (ny <= 430) player->setY(ny);
+
+            if (ny >= 60)
+                player->setY(ny);
+
+            moviendose = true;
         }
+        else if (teclasActivas.contains(Qt::Key_S) ||
+                 teclasActivas.contains(Qt::Key_Down))
+        {
+            qreal ny = player->y() + velV;
+
+            if (ny <= 430)
+                player->setY(ny);
+
+            moviendose = true;
+        }
+
+        // ← ESTA ES LA LÍNEA IMPORTANTE
+        player->animarMovimientoTopDown(moviendose);
     }
 
-    // ── Dibujar fondo ────────────────────────────────────────
-    if (nivelActual == 1) {
-        // Scroll horizontal del fondo (nivel 1 sin cambios)
+    // ── Fondo nivel 1 ────────────────────────────────────────
+    if (nivelActual == 1)
+    {
         bgOffset -= 2;
-        if (bgOffset <= -800) bgOffset += 800;
+
+        if (bgOffset <= -800)
+            bgOffset += 800;
 
         QPixmap canvas(800, 500);
         QPainter painter(&canvas);
+
         painter.drawPixmap(bgOffset, 0, bgPixmap);
         painter.drawPixmap(bgOffset + 800, 0, bgPixmap);
+
         painter.end();
+
         scene->setBackgroundBrush(canvas);
     }
-    // Nivel 2: fondo estático (FondoN2.png asignado en iniciarNivel, no se redibuja)
 
-    // ── Física del jugador ───────────────────────────────────
-    // En nivel 2 no aplicamos física de gravedad (vista cenital)
-    if (nivelActual == 1) {
+    // ── Física ───────────────────────────────────────────────
+    if (nivelActual == 1)
+    {
         player->aplicarFisica();
     }
 

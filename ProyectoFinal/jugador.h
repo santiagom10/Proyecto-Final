@@ -43,8 +43,10 @@ public:
 
     // Agregue esto
     void actualizarInvulnerabilidad();
-
-
+    void setModoPatineta(bool activo);
+    void animarMovimientoTopDown(bool moviendo);
+    void mirarIzquierda();
+    void mirarDerecha();
     // ─── Sistema de vidas y puntuación ───────────────────────
     int  getVidas()   const { return vidas; }
     int  getPuntos()  const { return puntos; }
@@ -73,7 +75,7 @@ private:
     const qreal fuerzaSalto   = -16.0;
     const qreal velocidadMaxX = 6.0;
     bool  mirrorX;
-
+    bool modoPatineta = true;
     // Vidas y puntos
     int vidas  = 3;
     int puntos = 0;
