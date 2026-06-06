@@ -163,7 +163,6 @@ QWidget* MainWindow::crearMenuPersonajes()
 
     QPushButton *btnSkater = crearTarjeta(":/Imagenes/Skater.png", "Skater",     "#2e86de");
     QPushButton *btnOzzy   = crearTarjeta(":/Imagenes/Ozzy.png",   "Ozzy",       "#8e44ad");
-    QPushButton *btnP3     = crearTarjeta(":/Imagenes/Skater.png", "Misterioso", "#e67e22");
 
     QPushButton *volver = new QPushButton("← Volver");
     volver->setFixedSize(160, 46);
@@ -179,7 +178,6 @@ QWidget* MainWindow::crearMenuPersonajes()
 
     connect(btnSkater, &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Skater.png"; stack->setCurrentWidget(menuDificultad); });
     connect(btnOzzy,   &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Ozzy.png";   stack->setCurrentWidget(menuDificultad); });
-    connect(btnP3,     &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Skater.png"; stack->setCurrentWidget(menuDificultad); });
     connect(volver,    &QPushButton::clicked, [=](){ stack->setCurrentWidget(menuPrincipal); });
 
     return w;
