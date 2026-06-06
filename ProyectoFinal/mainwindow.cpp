@@ -196,12 +196,12 @@ QWidget* MainWindow::crearMenuDificultad()
     titulo->setStyleSheet("color:white; font-size:30px; font-weight:bold; background:transparent;");
     titulo->setAlignment(Qt::AlignCenter);
 
-    struct DifInfo { QString nombre; QString desc; QString color; int val; };
+    struct DifInfo { QString nombre; QString color; int val; };
     QVector<DifInfo> difs = {
-                             { "🍬 Fácil",   "Solo obstáculos lineales • Muchos coleccionables", "#27ae60", 1 },
-                             { "🍪 Normal",  "Obstáculos parabólicos • Dificultad progresiva",   "#2e86de", 2 },
-                             { "🔥 Difícil", "Las 3 físicas • IA aprende de tus movimientos",    "#e74c3c", 3 },
-                             };
+                             { "🍬 Fácil", "#27ae60", 1 },
+                             { "🍪 Normal", "#2e86de", 2 },
+                             { "🔥 Difícil",  "#e74c3c", 3 },
+                            };
 
     for (auto &d : difs) {
         QPushButton *btn = new QPushButton();
@@ -215,12 +215,7 @@ QWidget* MainWindow::crearMenuDificultad()
         lNombre->setStyleSheet("color:white; font-size:20px; font-weight:bold; background:transparent;");
         lNombre->setAlignment(Qt::AlignCenter);
 
-        QLabel *lDesc = new QLabel(d.desc);
-        lDesc->setStyleSheet("color:#bdc3c7; font-size:12px; background:transparent;");
-        lDesc->setAlignment(Qt::AlignCenter);
-
         bly->addWidget(lNombre);
-        bly->addWidget(lDesc);
 
         btn->setStyleSheet(
             QString("QPushButton { background-color:%1; border-radius:12px; border:none; }"
@@ -536,14 +531,14 @@ void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
 
-    // ── Actualizar agente del nivel activo ───────────────────
+    // ── Actualizar agente del nivel activo
     if (nivelActual == 1 && ia)
         ia->actualizar();
 
     if (nivelActual == 2 && dron)
         dron->actualizar();
 
-    // ── Factor de velocidad si está en charco ────────────────
+    // ── Factor de velocidad si está en charco
     const qreal VEL_BASE = 6.0;
 
     qreal factorCharco =
@@ -555,7 +550,7 @@ void MainWindow::tickJuego()
 
     bool moviendose = false;
 
-    // ── Movimiento horizontal ────────────────────────────────
+    // ── Movimiento horizontal ─
     if (teclasActivas.contains(Qt::Key_A) ||
         teclasActivas.contains(Qt::Key_Left))
     {
@@ -600,7 +595,6 @@ void MainWindow::tickJuego()
     if (!moviendose && nivelActual == 1)
         player->detenerHorizontal();
 
-    // ── Movimiento vertical (nivel 2) ───────────────────────
     if (nivelActual == 2)
     {
         qreal velV = VEL_BASE * factorCharco;
@@ -625,12 +619,8 @@ void MainWindow::tickJuego()
 
             moviendose = true;
         }
-
-        // ← ESTA ES LA LÍNEA IMPORTANTE
         player->animarMovimientoTopDown(moviendose);
     }
-
-    // ── Fondo nivel 1 ────────────────────────────────────────
     if (nivelActual == 1)
     {
         bgOffset -= 2;
@@ -648,8 +638,6 @@ void MainWindow::tickJuego()
 
         scene->setBackgroundBrush(canvas);
     }
-
-    // ── Física ───────────────────────────────────────────────
     if (nivelActual == 1)
     {
         player->aplicarFisica();

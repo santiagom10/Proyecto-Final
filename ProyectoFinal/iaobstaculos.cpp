@@ -7,11 +7,8 @@
 #include <QDebug>
 #include <algorithm>
 #include <numeric>
-#include <stdexcept>   // ← para std::runtime_error
+#include <stdexcept>
 
-// ─────────────────────────────────────────────────────────────
-//  Constructor
-// ─────────────────────────────────────────────────────────────
 IAObstaculos::IAObstaculos(QGraphicsScene *scene, Jugador *jugador, QObject *parent)
     : QObject(parent),
     scene(scene),
@@ -50,16 +47,8 @@ void IAObstaculos::setDificultadInicial(int d)
     dificultadInicial = qBound(1, d, 3);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  iniciar()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::iniciar(int segundosParaGanar)
 {
-    // ── EXCEPCIÓN 2 ───────────────────────────────────────────
-    //  Verificamos que la escena y el jugador sean válidos
-    //  antes de intentar arrancar. Si no lo son, el juego
-    //  crashearía en algún punto posterior de forma confusa.
-    //  Con la excepción, el error es inmediato y descriptivo.
     if (!scene) {
         throw std::runtime_error(
             "IAObstaculos::iniciar() — la escena es nullptr. "
@@ -150,9 +139,6 @@ void IAObstaculos::detener()
     timerSegundo->stop();
 }
 
-// ─────────────────────────────────────────────────────────────
-//  actualizar()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::actualizar()
 {
     if (terminado) return;
@@ -177,9 +163,6 @@ std::vector<Obstaculo*>& IAObstaculos::obstaculos()
 bool IAObstaculos::juegoTerminado() const { return terminado; }
 bool IAObstaculos::jugadorGano()    const { return gano; }
 
-// ─────────────────────────────────────────────────────────────
-//  tickSegundo()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::tickSegundo()
 {
     if (terminado) return;
@@ -197,9 +180,6 @@ void IAObstaculos::tickSegundo()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  decidirObstaculo()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::decidirObstaculo()
 {
     if (terminado) return;
@@ -260,9 +240,6 @@ void IAObstaculos::decidirObstaculo()
     timerDecision->start(decidirIntervalo());
 }
 
-// ─────────────────────────────────────────────────────────────
-//  reforzarAprendizaje()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::reforzarAprendizaje(TipoObst tipo, ModeloFis modelo)
 {
     int clave = tipo * 10 + modelo;
@@ -279,9 +256,6 @@ void IAObstaculos::reforzarAprendizaje(TipoObst tipo, ModeloFis modelo)
              << "nuevo peso" << pesosCombinacion[clave];
 }
 
-// ─────────────────────────────────────────────────────────────
-//  elegirCombinacionAprendida()
-// ─────────────────────────────────────────────────────────────
 std::pair<IAObstaculos::TipoObst, IAObstaculos::ModeloFis>
 IAObstaculos::elegirCombinacionAprendida()
 {
@@ -316,9 +290,6 @@ IAObstaculos::elegirCombinacionAprendida()
     return { OBS_GALLETA, FIS_LINEAL };
 }
 
-// ─────────────────────────────────────────────────────────────
-//  generarObstaculo()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
                                     qreal x, qreal y, bool esColeccionable)
 {
@@ -348,13 +319,6 @@ void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
         o->fase        = QRandomGenerator::global()->generateDouble() * M_PI * 2;
         break;
     }
-
-    // ── EXCEPCIÓN 3 ───────────────────────────────────────────
-    //  Si el sprite del obstáculo no carga (ruta incorrecta),
-    //  usamos el color de fallback definido en cargarSprite,
-    //  pero registramos el problema en debug para detectarlo.
-    //  No lanzamos excepción aquí porque un obstáculo sin sprite
-    //  no es fatal — el juego puede continuar con el color.
     if (esColeccionable) {
         bool esPaleta = (QRandomGenerator::global()->bounded(100) < 30);
         o->tipo = esPaleta ? Obstaculo::PALETA : Obstaculo::CARAMELO;
@@ -375,9 +339,6 @@ void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
     listaObstaculos.push_back(o);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  verificarColisiones()
-// ─────────────────────────────────────────────────────────────
 void IAObstaculos::verificarColisiones()
 {
     QList<QGraphicsItem*> cols = jugador->collidingItems();

@@ -21,14 +21,6 @@ void Obstaculo::cargarSprite(const QString &ruta, int ancho, int alto)
         setPixmap(fallback);
     }
 }
-
-// ─────────────────────────────────────────────────────────────
-//  actualizarFisica()  — implementación del contrato EntidadJuego
-//
-//  LINEAL:      X -= velocidadX
-//  PARABOLICO:  Vy += gravedad  →  Y += Vy  (parábola real)
-//  OSCILATORIO: Y = yBase + A·sin(ω·t + φ)
-// ─────────────────────────────────────────────────────────────
 void Obstaculo::actualizarFisica()
 {
     tickPropio++;
@@ -54,9 +46,6 @@ void Obstaculo::actualizarFisica()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  reiniciar()  — implementación del contrato EntidadJuego
-// ─────────────────────────────────────────────────────────────
 void Obstaculo::reiniciar()
 {
     velocidadX  = 4.0;

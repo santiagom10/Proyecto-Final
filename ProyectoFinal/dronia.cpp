@@ -8,9 +8,6 @@
 #include <QDebug>
 #include <algorithm>
 
-// ─────────────────────────────────────────────────────────────
-//  Constructor
-// ─────────────────────────────────────────────────────────────
 DronIA::DronIA(QGraphicsScene *scene, Jugador *jugador, int dificultad, QObject *parent)
     : QObject(parent)
     , scene(scene)
@@ -29,8 +26,6 @@ DronIA::DronIA(QGraphicsScene *scene, Jugador *jugador, int dificultad, QObject 
     connect(jugador, &Jugador::vidasCambiaron,     this, [this](int v){ actualizarHUDVidas(v);  });
     connect(jugador, &Jugador::puntajeActualizado, this, [this](int p){ actualizarHUDPuntos(p); });
 
-    // ── Precargar sprite del dron ─────────────────────────────
-    // ── Precargar sprite del dron ─────────────────────────────
     pixDronBase = QPixmap(":/Imagenes/Dron.png").scaled(
         DRON_W, DRON_H,
         Qt::KeepAspectRatio,
@@ -43,7 +38,6 @@ DronIA::DronIA(QGraphicsScene *scene, Jugador *jugador, int dificultad, QObject 
         Qt::SmoothTransformation
         );
 
-    // ── Precargar sprites de coleccionables ──────────────────
     pixCaramelo = QPixmap(":/Imagenes/Caramelo.png").scaled(
         32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation
         );
@@ -52,15 +46,12 @@ DronIA::DronIA(QGraphicsScene *scene, Jugador *jugador, int dificultad, QObject 
         32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation
         );
 
-    // ── Cargar hoja de charcos ───────────────────────────────
-    // Deja SOLO uno de estos nombres, el que tengas realmente en el .qrc
     pixCharcoSheet = QPixmap(":/Imagenes/Charco.png");
 
-    // Recortes de los 3 charcos visibles en tu PNG
     charcoFrames = {
-        QRect(51, 87, 227, 196),   // charco verde grande
-        QRect(306, 125, 137, 134),  // charco morado
-        QRect(465, 120, 162, 138)   // charco rojo
+        QRect(51, 87, 227, 196),
+        QRect(306, 125, 137, 134),
+        QRect(465, 120, 162, 138)
     };
 }
 DronIA::~DronIA()
@@ -74,9 +65,6 @@ void DronIA::setDificultad(int d)
     dificultad = qBound(1, d, 3);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  iniciar()
-// ─────────────────────────────────────────────────────────────
 void DronIA::iniciar()
 {
     terminado          = false;
@@ -130,35 +118,25 @@ void DronIA::iniciar()
     timerSegundo->start();
 }
 
-// ─────────────────────────────────────────────────────────────
-//  detener()
-// ─────────────────────────────────────────────────────────────
 void DronIA::detener()
 {
     if (timerSegundo) timerSegundo->stop();
 }
-
-// ─────────────────────────────────────────────────────────────
-//  actualizar()  — llamado cada ~16ms desde tickJuego()
-// ─────────────────────────────────────────────────────────────
 void DronIA::actualizar()
 {
     if (terminado) return;
 
     if (ticksInvuln > 0) ticksInvuln--;
 
-    // ── PERCEPCIÓN: registrar zona del jugador ────────────────
     int zona = zonaDelJugador();
     histogramaZonas[zona]++;
 
-    // ── RAZONAMIENTO: cada 120 ticks (~2s) reevalúa estrategia ──
     ticksEstrategia++;
     if (ticksEstrategia >= 120) {
         ticksEstrategia = 0;
         elegirEstrategiaMovimiento();
     }
 
-    // ── ACCIÓN: mover el dron hacia el objetivo ───────────────
     qreal dx   = objetivoX - dronX;
     qreal dy   = objetivoY - dronY;
     qreal dist = qSqrt(dx * dx + dy * dy);
@@ -178,7 +156,6 @@ void DronIA::actualizar()
 
     actualizarVisualDron();
 
-    // ── Disparar proyectil ────────────────────────────────────
     ticksProximoDisparo--;
     if (ticksProximoDisparo <= 0) {
         ticksProximoDisparo = intervalDisparo;
@@ -188,7 +165,6 @@ void DronIA::actualizar()
     actualizarProyectiles();
     verificarColisionesProyectiles();
 
-    // ── Charcos ───────────────────────────────────────────────
     ticksProximoCharco--;
     if (ticksProximoCharco <= 0) {
         ticksProximoCharco = 200 + QRandomGenerator::global()->bounded(200);
@@ -197,10 +173,8 @@ void DronIA::actualizar()
     actualizarCharcos();
     verificarJugadorEnCharco();
 
-    // ── Colisión directa dron-jugador ─────────────────────────
     verificarColisionDirecta();
 
-    // ── Coleccionables cada ~3s ───────────────────────────────
     ticksColeccionable++;
     if (ticksColeccionable >= 180) {
         ticksColeccionable = 0;
@@ -209,9 +183,6 @@ void DronIA::actualizar()
     verificarColeccionables();
 }
 
-// ─────────────────────────────────────────────────────────────
-//  zonaDelJugador()
-// ─────────────────────────────────────────────────────────────
 int DronIA::zonaDelJugador() const
 {
     int col  = qBound(0, (int)(jugador->x() / 267), 2);
@@ -219,9 +190,6 @@ int DronIA::zonaDelJugador() const
     return fila * 3 + col;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  zonaMasFrecuentada()
-// ─────────────────────────────────────────────────────────────
 int DronIA::zonaMasFrecuentada() const
 {
     int maxZona = 0, maxVal = -1;
@@ -231,9 +199,6 @@ int DronIA::zonaMasFrecuentada() const
     return maxZona;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  elegirEstrategiaMovimiento()  — RAZONAMIENTO del agente
-// ─────────────────────────────────────────────────────────────
 void DronIA::elegirEstrategiaMovimiento()
 {
     zonaPreferida = zonaMasFrecuentada();
@@ -267,10 +232,6 @@ void DronIA::elegirEstrategiaMovimiento()
         qDebug() << "DronIA: DIRECTO";
     }
 }
-
-// ─────────────────────────────────────────────────────────────
-//  reforzarAprendizaje()
-// ─────────────────────────────────────────────────────────────
 void DronIA::reforzarAprendizaje(int zona)
 {
     pesosAtaque[zona]++;
@@ -284,10 +245,6 @@ void DronIA::reforzarAprendizaje(int zona)
              << "| intervalo disparo:" << intervalDisparo;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  dispararProyectil()  — lanza bola de gelatina al jugador
-//  Usa Caramelo.png o Paleta.png como sprite del proyectil
-// ─────────────────────────────────────────────────────────────
 void DronIA::dispararProyectil()
 {
     qreal px = dronX + DRON_W / 2.0;
@@ -306,18 +263,6 @@ void DronIA::dispararProyectil()
     p->vx = (dx / dist) * velProyectil;
     p->vy = (dy / dist) * velProyectil;
 
-    // cambie esto
-    /*
-    bool usarPaleta = (QRandomGenerator::global()->bounded(2) == 0);
-    QPixmap pixProy = usarPaleta ? pixPaleta : pixCaramelo;
-
-    QPixmap small = pixProy.scaled(
-        28, 28,
-        Qt::KeepAspectRatio,
-        Qt::SmoothTransformation
-        );
-    */
-
     QPixmap small = pixGalleta.scaled(
         40, 40,
         Qt::KeepAspectRatio,
@@ -332,9 +277,6 @@ void DronIA::dispararProyectil()
     proyectiles.append(p);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  actualizarProyectiles()
-// ─────────────────────────────────────────────────────────────
 void DronIA::actualizarProyectiles()
 {
     for (auto it = proyectiles.begin(); it != proyectiles.end(); ) {
@@ -363,9 +305,6 @@ void DronIA::actualizarProyectiles()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  verificarColisionesProyectiles()
-// ─────────────────────────────────────────────────────────────
 void DronIA::verificarColisionesProyectiles()
 {
     qreal jx = jugador->x();
@@ -381,12 +320,6 @@ void DronIA::verificarColisionesProyectiles()
             it = proyectiles.erase(it);
             continue;
         }
-        // cambie esto para que el sprite este fijo
-        /*
-        qreal bx = p->itemSprite->x() + 20;
-        qreal by = p->itemSprite->y() + 20;
-        */
-
         QRectF r = p->itemSprite->boundingRect();
 
         qreal bx = p->itemSprite->x() + r.width()  / 2.0;
@@ -419,10 +352,6 @@ void DronIA::verificarColisionesProyectiles()
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────
-//  verificarColisionDirecta()  — dron toca al jugador
-// ─────────────────────────────────────────────────────────────
 void DronIA::verificarColisionDirecta()
 {
     if (ticksInvuln > 0) return;
@@ -435,7 +364,6 @@ void DronIA::verificarColisionDirecta()
 
     qreal dist = qSqrt((cx - jx) * (cx - jx) + (cy - jy) * (cy - jy));
 
-    // Radio de colisión = mitad dron + mitad jugador aprox.
     if (dist < 45) {
         bool golpe = jugador->recibirGolpe();
         if (golpe) {
@@ -452,9 +380,6 @@ void DronIA::verificarColisionDirecta()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  generarCharco()  — versión con posición opcional (impacto)
-// ─────────────────────────────────────────────────────────────
 void DronIA::generarCharco(qreal forzarX, qreal forzarY)
 {
     if ((int)charcos.size() >= maxCharcos) return;
@@ -496,9 +421,6 @@ void DronIA::generarCharco(qreal forzarX, qreal forzarY)
     charcos.append(c);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  actualizarCharcos()
-// ─────────────────────────────────────────────────────────────
 void DronIA::actualizarCharcos()
 {
     for (auto it = charcos.begin(); it != charcos.end(); ) {
@@ -518,9 +440,6 @@ void DronIA::actualizarCharcos()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  verificarJugadorEnCharco()  — aplica factor de ralentización
-// ─────────────────────────────────────────────────────────────
 void DronIA::verificarJugadorEnCharco()
 {
     qreal jx = jugador->x() + 25;
@@ -533,9 +452,6 @@ void DronIA::verificarJugadorEnCharco()
     factorVelocidad = enCharco ? 0.4 : 1.0;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  generarColeccionable()  — usa Caramelo.png / Paleta.png
-// ─────────────────────────────────────────────────────────────
 void DronIA::generarColeccionable()
 {
     if ((int)coleccionables.size() >= 5) return;
@@ -571,9 +487,6 @@ void DronIA::generarColeccionable()
     coleccionables.append(item);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  verificarColeccionables()
-// ─────────────────────────────────────────────────────────────
 void DronIA::verificarColeccionables()
 {
     for (auto it = coleccionables.begin(); it != coleccionables.end(); ) {
@@ -596,17 +509,11 @@ void DronIA::verificarColeccionables()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  actualizarVisualDron()
-// ─────────────────────────────────────────────────────────────
 void DronIA::actualizarVisualDron()
 {
     if (spriteDron) spriteDron->setPos(dronX, dronY);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  tickSegundo()
-// ─────────────────────────────────────────────────────────────
 void DronIA::tickSegundo()
 {
     if (terminado) return;
@@ -624,9 +531,6 @@ void DronIA::tickSegundo()
     }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  HUD
-// ─────────────────────────────────────────────────────────────
 void DronIA::iniciarHUD()
 {
     fondoTiempo = new QGraphicsRectItem(270, 6, 260, 42);

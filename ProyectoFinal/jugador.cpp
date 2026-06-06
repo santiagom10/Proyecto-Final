@@ -1,6 +1,6 @@
 #include "jugador.h"
 #include <QTransform>
-#include <stdexcept>   // ← para std::runtime_error
+#include <stdexcept>
 
 Jugador::Jugador(QGraphicsItem *parent)
     : QGraphicsPixmapItem(parent),
@@ -14,11 +14,6 @@ Jugador::Jugador(QGraphicsItem *parent)
 void Jugador::cargarSprite(const QString &ruta)
 {
     spriteFull = QPixmap(ruta);
-
-    // ── EXCEPCIÓN 1 ───────────────────────────────────────────
-    //  Si la ruta del sprite no existe o está mal escrita,
-    //  lanzamos una excepción descriptiva en vez de dejar
-    //  al jugador invisible o con un cuadro azul.
     if (spriteFull.isNull()) {
         throw std::runtime_error(
             std::string("No se pudo cargar el sprite del jugador: ")
@@ -68,12 +63,10 @@ void Jugador::aplicarFrameActual()
 
         if(modoPatineta)
         {
-            // Patineta quieta
             setPixmap(obtenerFrame(0,1));
         }
         else
         {
-            // Quieto parado
             setPixmap(obtenerFrame(0,0));
         }
 
@@ -83,7 +76,6 @@ void Jugador::aplicarFrameActual()
 
         if(modoPatineta)
         {
-            // Ride1 ↔ Ride2
             if(frameAnim % 2 == 0)
                 setPixmap(obtenerFrame(0,1));
             else
@@ -91,7 +83,6 @@ void Jugador::aplicarFrameActual()
         }
         else
         {
-            // Walk1 ↔ Walk2
             if(frameAnim % 2 == 0)
                 setPixmap(obtenerFrame(1,0));
             else
@@ -101,15 +92,11 @@ void Jugador::aplicarFrameActual()
         break;
 
     case SALTANDO:
-
-        // Sprite de salto
         setPixmap(obtenerFrame(5,0));
 
         break;
 
     case ATERRIZANDO:
-
-        // Sprite de aterrizaje
         setPixmap(obtenerFrame(4,1));
 
         break;

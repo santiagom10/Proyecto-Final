@@ -16,29 +16,18 @@
 
 class Jugador;
 
-// ─── Proyectil lanzado por el dron ───────────────────────────
-// Usa sprite PNG (Caramelo/Paleta); si no carga, usa elipse
 struct Proyectil {
     QGraphicsPixmapItem *itemSprite = nullptr;
     qreal vx = 0.0;
     qreal vy = 0.0;
 };
 
-// ─── Charco de gelatina con física de ralentización ──────────
 struct Charco {
     QGraphicsPixmapItem *item      = nullptr;
     QRectF               rect;
     int                  ticksVida = 300;
 };
 
-// ─────────────────────────────────────────────────────────────
-//  Clase DronIA  –  Agente inteligente del Nivel 2
-//
-//  a) PERCEPCIÓN  → histograma 3×3 de zonas donde está el jugador
-//  b) RAZONAMIENTO → elige estrategia: DIRECTO / EMBOSCADA / CORTE
-//  c) ACCIÓN      → se mueve + dispara proyectiles (Caramelo/Paleta)
-//  d) APRENDIZAJE → tras cada golpe sube velocidad y frecuencia de disparo
-// ─────────────────────────────────────────────────────────────
 class DronIA : public QObject
 {
     Q_OBJECT
@@ -73,7 +62,6 @@ private:
     Jugador        *jugador;
     int             dificultad;
 
-    // ─── Sprites precargados ─────────────────────────────────
     QPixmap pixDronBase;
 
     // Agregue esto
@@ -149,7 +137,6 @@ private:
     // ─── Colisión directa dron-jugador ───────────────────────
     void verificarColisionDirecta();
 
-    // ─── HUD ─────────────────────────────────────────────────
     QTimer             *timerSegundo = nullptr;
     QGraphicsTextItem  *textoTiempo  = nullptr;
     QGraphicsRectItem  *fondoTiempo  = nullptr;
@@ -167,4 +154,4 @@ private:
     void limpiarCharcos();
 };
 
-#endif // DRONIA_H
+#endif
