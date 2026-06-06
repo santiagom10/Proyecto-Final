@@ -75,6 +75,10 @@ private:
 
     // ─── Sprites precargados ─────────────────────────────────
     QPixmap pixDronBase;
+
+    // Agregue esto
+    QPixmap pixGalleta;
+
     QPixmap pixCaramelo;
     QPixmap pixPaleta;
     QPixmap pixCharcoSheet;

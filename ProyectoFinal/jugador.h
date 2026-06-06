@@ -41,6 +41,10 @@ public:
     void cargarSprite(const QString &ruta);
     void actualizarSprite();
 
+    // Agregue esto
+    void actualizarInvulnerabilidad();
+
+
     // ─── Sistema de vidas y puntuación ───────────────────────
     int  getVidas()   const { return vidas; }
     int  getPuntos()  const { return puntos; }

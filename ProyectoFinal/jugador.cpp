@@ -33,6 +33,16 @@ void Jugador::cargarSprite(const QString &ruta)
     aplicarFrameActual();
 }
 
+// Agregue esto
+void Jugador::actualizarInvulnerabilidad()
+{
+    if (ticksInvulnerable > 0)
+    {
+        ticksInvulnerable--;
+        aplicarFrameActual();
+    }
+}
+
 QPixmap Jugador::obtenerFrame(int col, int fila)
 {
     QPixmap frame = spriteFull.copy(col * fw, fila * fh, fw, fh);

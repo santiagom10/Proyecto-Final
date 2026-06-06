@@ -603,7 +603,15 @@ void MainWindow::tickJuego()
     if (nivelActual == 1) {
         player->aplicarFisica();
     }
+
+    if (nivelActual == 2)
+    {
+        player->actualizarInvulnerabilidad();
+    }
 }
+
+
+
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {

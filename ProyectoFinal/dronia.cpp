@@ -37,6 +37,12 @@ DronIA::DronIA(QGraphicsScene *scene, Jugador *jugador, int dificultad, QObject 
         Qt::SmoothTransformation
         );
 
+    pixGalleta = QPixmap(":/Imagenes/Galleta.png").scaled(
+        40, 40,
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+        );
+
     // ── Precargar sprites de coleccionables ──────────────────
     pixCaramelo = QPixmap(":/Imagenes/Caramelo.png").scaled(
         32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation
@@ -300,11 +306,20 @@ void DronIA::dispararProyectil()
     p->vx = (dx / dist) * velProyectil;
     p->vy = (dy / dist) * velProyectil;
 
+    // cambie esto
+    /*
     bool usarPaleta = (QRandomGenerator::global()->bounded(2) == 0);
     QPixmap pixProy = usarPaleta ? pixPaleta : pixCaramelo;
 
     QPixmap small = pixProy.scaled(
         28, 28,
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+        );
+    */
+
+    QPixmap small = pixGalleta.scaled(
+        40, 40,
         Qt::KeepAspectRatio,
         Qt::SmoothTransformation
         );
@@ -366,9 +381,16 @@ void DronIA::verificarColisionesProyectiles()
             it = proyectiles.erase(it);
             continue;
         }
+        // cambie esto para que el sprite este fijo
+        /*
+        qreal bx = p->itemSprite->x() + 20;
+        qreal by = p->itemSprite->y() + 20;
+        */
 
-        qreal bx = p->itemSprite->x() + 14;
-        qreal by = p->itemSprite->y() + 14;
+        QRectF r = p->itemSprite->boundingRect();
+
+        qreal bx = p->itemSprite->x() + r.width()  / 2.0;
+        qreal by = p->itemSprite->y() + r.height() / 2.0;
 
         bool golpea = (bx > jx && bx < jx + jw && by > jy && by < jy + jh);
 
@@ -527,18 +549,18 @@ void DronIA::generarColeccionable()
     QGraphicsPixmapItem *item = nullptr;
 
     if (!pixSrc.isNull()) {
-        QPixmap scaled = pixSrc.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QPixmap scaled = pixSrc.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         item = new QGraphicsPixmapItem(scaled);
         item->setPos(x, y);
     } else {
         // Fallback círculo si falta el PNG
-        QPixmap fallback(36, 36);
+        QPixmap fallback(64, 64);
         fallback.fill(Qt::transparent);
         QPainter p(&fallback);
         QColor col = esPaleta ? QColor(255, 210, 0) : QColor(255, 100, 100);
         p.setBrush(QBrush(col));
         p.setPen(QPen(col.darker(150), 2));
-        p.drawEllipse(2, 2, 32, 32);
+        p.drawEllipse(4, 4, 56, 56);
         p.end();
         item = new QGraphicsPixmapItem(fallback);
         item->setPos(x, y);
