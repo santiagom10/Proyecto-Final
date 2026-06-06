@@ -1,9 +1,10 @@
 #include "jugador.h"
 #include <QTransform>
+#include <stdexcept>   // ← para std::runtime_error
 
 Jugador::Jugador(QGraphicsItem *parent)
     : QGraphicsPixmapItem(parent),
-    velocidadX(0), velocidadY(0),
+    EntidadJuego(),
     enSueloFlag(true), sueloY(320),
     mirrorX(false),
     estado(IDLE), frameAnim(0), contadorAnim(0),
@@ -13,12 +14,18 @@ Jugador::Jugador(QGraphicsItem *parent)
 void Jugador::cargarSprite(const QString &ruta)
 {
     spriteFull = QPixmap(ruta);
+
+    // ── EXCEPCIÓN 1 ───────────────────────────────────────────
+    //  Si la ruta del sprite no existe o está mal escrita,
+    //  lanzamos una excepción descriptiva en vez de dejar
+    //  al jugador invisible o con un cuadro azul.
     if (spriteFull.isNull()) {
-        QPixmap tmp(60, 60);
-        tmp.fill(Qt::blue);
-        setPixmap(tmp);
-        return;
+        throw std::runtime_error(
+            std::string("No se pudo cargar el sprite del jugador: ")
+            + ruta.toStdString()
+            );
     }
+
     fw = spriteFull.width()  / 7;
     fh = spriteFull.height() / 2;
     estado    = IDLE;
@@ -39,7 +46,6 @@ void Jugador::aplicarFrameActual()
 {
     if (spriteFull.isNull() || fw == 0) return;
 
-    // Parpadeo durante invulnerabilidad: ocultar cada 6 ticks
     if (ticksInvulnerable > 0 && (ticksInvulnerable / 6) % 2 == 0) {
         setOpacity(0.3);
     } else {
@@ -126,19 +132,16 @@ void Jugador::saltar()
     }
 }
 
-void Jugador::aplicarFisica()
+void Jugador::actualizarFisica()
 {
-    // Bajar contador de invulnerabilidad y actualizar parpadeo a 60 fps
     if (ticksInvulnerable > 0) {
         ticksInvulnerable--;
-        aplicarFrameActual();   // refresca la opacidad cada tick, no solo cada 100 ms
+        aplicarFrameActual();
     }
 
-    // Gravedad
     velocidadY += gravedad;
     setY(y() + velocidadY);
 
-    // Piso
     if (y() >= sueloY) {
         setY(sueloY);
         velocidadY = 0;
@@ -151,7 +154,6 @@ void Jugador::aplicarFisica()
         }
     }
 
-    // Movimiento horizontal
     setX(x() + velocidadX);
     if (x() < 0)   setX(0);
     if (x() > 710) setX(710);
@@ -159,9 +161,7 @@ void Jugador::aplicarFisica()
 
 bool Jugador::recibirGolpe()
 {
-    // Si está en periodo de invulnerabilidad, ignorar el golpe
     if (ticksInvulnerable > 0) return false;
-
     vidas--;
     ticksInvulnerable = TICKS_INVULN;
     emit vidasCambiaron(vidas);
@@ -182,6 +182,7 @@ void Jugador::reiniciar()
     velocidadX         = 0;
     velocidadY         = 0;
     enSueloFlag        = true;
+    activo             = true;
     estado             = IDLE;
     frameAnim          = 0;
     contadorAnim       = 0;

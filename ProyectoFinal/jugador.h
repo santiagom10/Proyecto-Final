@@ -4,19 +4,19 @@
 #include <QObject>
 #include <QGraphicsPixmapItem>
 #include <QVector>
+#include "entidadjuego.h"
 
 // ─────────────────────────────────────────────────────────────
 //  Clase Jugador
 //
+//  Herencia:
+//    EntidadJuego  ← clase base PROPIA (contrato de física)
+//    QObject       ← para señales/slots Qt
+//    QGraphicsPixmapItem ← para renderizado en escena
+//
 //  Maneja movimiento, animación, física y estado del personaje.
-//  Se agrega:
-//    - Sistema de vidas (3 por defecto)
-//    - Puntuación
-//    - Frames de invulnerabilidad tras golpe (parpadeo)
-//    - señales para HUD
 // ─────────────────────────────────────────────────────────────
-
-class Jugador : public QObject, public QGraphicsPixmapItem
+class Jugador : public QObject, public QGraphicsPixmapItem, public EntidadJuego
 {
     Q_OBJECT
 public:
@@ -28,8 +28,9 @@ public:
     void detenerHorizontal();
     void saltar();
 
-    // Fisica (llamada cada tick del timer)
-    void aplicarFisica();
+    // Implementación del contrato de EntidadJuego
+    void actualizarFisica() override;   // antes llamada aplicarFisica()
+    void reiniciar()        override;
 
     // Configuración
     void setSueloY(qreal y);
@@ -40,7 +41,7 @@ public:
     void cargarSprite(const QString &ruta);
     void actualizarSprite();
 
-    // ─── Sistema de vidas y puntuación ───────────────────
+    // ─── Sistema de vidas y puntuación ───────────────────────
     int  getVidas()   const { return vidas; }
     int  getPuntos()  const { return puntos; }
 
@@ -51,19 +52,17 @@ public:
     // Llamar cuando el jugador recoge un coleccionable
     void recogerItem(int valorPuntos = 10);
 
-    // Reiniciar estado para nuevo nivel/partida
-    void reiniciar();
-
     bool estaVivo() const { return vidas > 0; }
+
+    // Alias para compatibilidad con código existente en MainWindow
+    void aplicarFisica() { actualizarFisica(); }
 
 signals:
     void vidasCambiaron(int nuevasVidas);
     void puntajeActualizado(int nuevoPuntaje);
 
 private:
-    // Fisica
-    qreal velocidadX;
-    qreal velocidadY;
+    // Fisica propia del jugador
     bool  enSueloFlag;
     qreal sueloY;
     const qreal gravedad      = 0.9;
@@ -88,9 +87,8 @@ private:
     // Spritesheet
     QPixmap spriteFull;
     int fw, fh;
-
     QPixmap obtenerFrame(int col, int fila);
     void    aplicarFrameActual();
 };
 
-#endif
+#endif // JUGADOR_H

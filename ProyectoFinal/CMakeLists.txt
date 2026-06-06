@@ -15,6 +15,8 @@ qt_add_executable(ProyectoFinal
     obstaculo.h obstaculo.cpp
     iaobstaculos.h
     iaobstaculos.cpp
+    entidadjuego.h entidadjuego.cpp
+    dronia.h dronia.cpp
 )
 
 qt_add_resources(ProyectoFinal "resources"
@@ -33,7 +35,8 @@ qt_add_resources(ProyectoFinal "resources"
         Imagenes/Caramelo.png
         Imagenes/Paleta.png
         Imagenes/Splash.png
-
+        Imagenes/Charco.png
+        Imagenes/Dron.png
 )
 
 target_link_libraries(ProyectoFinal

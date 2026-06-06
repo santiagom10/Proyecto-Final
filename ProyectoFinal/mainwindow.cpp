@@ -5,6 +5,8 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QTransform>
+#include <QMessageBox>
+#include <stdexcept>
 
 // ─────────────────────────────────────────────────────────────
 //  Constructor
@@ -16,9 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     personajeSeleccionado = ":/Imagenes/Skater.png";
-
-    // Ventana grande desde el inicio
-    resize(1280, 800);
+    showMaximized();
     setWindowTitle("Skate en el Universo de los Dulces");
 
     stack = new QStackedWidget(this);
@@ -37,19 +37,17 @@ MainWindow::MainWindow(QWidget *parent)
     stack->addWidget(pantallaJuego);
     stack->setCurrentWidget(menuPrincipal);
 
-    // Cuando se cambie a la pantalla de juego, ajustar escala
     connect(stack, &QStackedWidget::currentChanged, this, [this](int){
         if (stack->currentWidget() == pantallaJuego)
             ajustarEscalaVista();
     });
 
-    // Timers
     timerJuego = new QTimer(this);
-    timerJuego->setInterval(16);   // ~60 fps
+    timerJuego->setInterval(16);
     connect(timerJuego, &QTimer::timeout, this, &MainWindow::tickJuego);
 
     timerAnim = new QTimer(this);
-    timerAnim->setInterval(100);   // 10 fps para animación del sprite
+    timerAnim->setInterval(100);
     connect(timerAnim, &QTimer::timeout, this, [this](){
         if (stack->currentWidget() == pantallaJuego)
             player->actualizarSprite();
@@ -63,8 +61,6 @@ MainWindow::~MainWindow()
 
 // ─────────────────────────────────────────────────────────────
 //  ajustarEscalaVista()
-//  Escala la QGraphicsView para ocupar todo el espacio disponible
-//  manteniendo la relación de aspecto 800:500 de la escena.
 // ─────────────────────────────────────────────────────────────
 void MainWindow::ajustarEscalaVista()
 {
@@ -72,7 +68,6 @@ void MainWindow::ajustarEscalaVista()
 
     int wDisp = pantallaJuego->width();
     int hDisp = pantallaJuego->height();
-
     if (wDisp <= 0 || hDisp <= 0) return;
 
     double escalaX = wDisp  / 800.0;
@@ -85,7 +80,6 @@ void MainWindow::ajustarEscalaVista()
 
 // ─────────────────────────────────────────────────────────────
 //  resizeEvent()
-//  Re-escala la vista cuando el usuario redimensiona la ventana.
 // ─────────────────────────────────────────────────────────────
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
@@ -124,9 +118,7 @@ QWidget* MainWindow::crearMenuPrincipal()
     ly->addWidget(btnSalir);
     w->setLayout(ly);
 
-    connect(btnJugar, &QPushButton::clicked, [=](){
-        stack->setCurrentWidget(menuPersonajes);
-    });
+    connect(btnJugar, &QPushButton::clicked, [=](){ stack->setCurrentWidget(menuPersonajes); });
     connect(btnSalir, &QPushButton::clicked, [=](){ close(); });
 
     return w;
@@ -197,28 +189,14 @@ QWidget* MainWindow::crearMenuPersonajes()
     ly->addWidget(volver, 0, Qt::AlignCenter);
     w->setLayout(ly);
 
-    connect(btnSkater, &QPushButton::clicked, [=](){
-        personajeSeleccionado = ":/Imagenes/Skater.png";
-        stack->setCurrentWidget(menuDificultad);
-    });
-    connect(btnOzzy, &QPushButton::clicked, [=](){
-        personajeSeleccionado = ":/Imagenes/Ozzy.png";
-        stack->setCurrentWidget(menuDificultad);
-    });
-    connect(btnP3, &QPushButton::clicked, [=](){
-        personajeSeleccionado = ":/Imagenes/Skater.png";
-        stack->setCurrentWidget(menuDificultad);
-    });
-    connect(volver, &QPushButton::clicked, [=](){
-        stack->setCurrentWidget(menuPrincipal);
-    });
+    connect(btnSkater, &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Skater.png"; stack->setCurrentWidget(menuDificultad); });
+    connect(btnOzzy,   &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Ozzy.png";   stack->setCurrentWidget(menuDificultad); });
+    connect(btnP3,     &QPushButton::clicked, [=](){ personajeSeleccionado = ":/Imagenes/Skater.png"; stack->setCurrentWidget(menuDificultad); });
+    connect(volver,    &QPushButton::clicked, [=](){ stack->setCurrentWidget(menuPrincipal); });
 
     return w;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Pantalla de selección de dificultad
-// ─────────────────────────────────────────────────────────────
 QWidget* MainWindow::crearMenuDificultad()
 {
     QWidget *w = new QWidget();
@@ -234,9 +212,9 @@ QWidget* MainWindow::crearMenuDificultad()
 
     struct DifInfo { QString nombre; QString desc; QString color; int val; };
     QVector<DifInfo> difs = {
-                             { "🍬 Fácil",    "Solo obstáculos lineales • Muchos coleccionables", "#27ae60", 1 },
-                             { "🍪 Normal",   "Obstáculos parabólicos • Dificultad progresiva",   "#2e86de", 2 },
-                             { "🔥 Difícil",  "Las 3 físicas • IA aprende de tus movimientos",    "#e74c3c", 3 },
+                             { "🍬 Fácil",   "Solo obstáculos lineales • Muchos coleccionables", "#27ae60", 1 },
+                             { "🍪 Normal",  "Obstáculos parabólicos • Dificultad progresiva",   "#2e86de", 2 },
+                             { "🔥 Difícil", "Las 3 físicas • IA aprende de tus movimientos",    "#e74c3c", 3 },
                              };
 
     for (auto &d : difs) {
@@ -248,7 +226,7 @@ QWidget* MainWindow::crearMenuDificultad()
         bly->setAlignment(Qt::AlignCenter);
 
         QLabel *lNombre = new QLabel(d.nombre);
-        lNombre->setStyleSheet(QString("color:white; font-size:20px; font-weight:bold; background:transparent;"));
+        lNombre->setStyleSheet("color:white; font-size:20px; font-weight:bold; background:transparent;");
         lNombre->setAlignment(Qt::AlignCenter);
 
         QLabel *lDesc = new QLabel(d.desc);
@@ -264,10 +242,7 @@ QWidget* MainWindow::crearMenuDificultad()
             );
 
         int val = d.val;
-        connect(btn, &QPushButton::clicked, [=](){
-            dificultadSel = val;
-            stack->setCurrentWidget(menuNiveles);
-        });
+        connect(btn, &QPushButton::clicked, [=](){ dificultadSel = val; stack->setCurrentWidget(menuNiveles); });
         ly->addWidget(btn);
     }
 
@@ -282,7 +257,6 @@ QWidget* MainWindow::crearMenuDificultad()
     ly->insertWidget(0, titulo);
     ly->addWidget(volver, 0, Qt::AlignCenter);
     w->setLayout(ly);
-
     return w;
 }
 
@@ -308,15 +282,13 @@ QWidget* MainWindow::crearMenuNiveles()
     vol->setFixedSize(160, 46);
 
     n1->setStyleSheet(
-        "QPushButton { background-color:#2e86de; color:white; font-size:20px;"
-        "font-weight:bold; border-radius:12px; }"
+        "QPushButton { background-color:#2e86de; color:white; font-size:20px; font-weight:bold; border-radius:12px; }"
         "QPushButton:hover { background-color:#54a0ff; }"
         );
     n2->setStyleSheet(
-        "QPushButton { background-color:#636e72; color:#b2bec3; font-size:18px;"
-        "font-weight:bold; border-radius:12px; }"
+        "QPushButton { background-color:#27ae60; color:white; font-size:18px; font-weight:bold; border-radius:12px; }"
+        "QPushButton:hover { background-color:#2ecc71; }"
         );
-
     vol->setStyleSheet(
         "QPushButton { background-color:#576574; color:white; border-radius:8px; font-size:16px; }"
         "QPushButton:hover { background-color:#747d8c; }"
@@ -347,9 +319,8 @@ QWidget* MainWindow::crearPantallaJuego()
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     view->setFrameStyle(0);
-    view->setRenderHint(QPainter::SmoothPixmapTransform); // imagen nítida al escalar
+    view->setRenderHint(QPainter::SmoothPixmapTransform);
     view->setSceneRect(0, 0, 800, 500);
-    // No llamamos setFixedSize aquí; ajustarEscalaVista() lo maneja dinámicamente
 
     player = new Jugador();
     player->setSueloY(260);
@@ -373,117 +344,204 @@ void MainWindow::iniciarNivel(int num)
 {
     nivelActual = num;
     player->reiniciar();
-    player->cargarSprite(personajeSeleccionado);
 
-    QString rutaFondo;
+    // Cargar sprite del personaje (con manejo de excepción)
+    try {
+        player->cargarSprite(personajeSeleccionado);
+    }
+    catch (const std::runtime_error &e) {
+        QMessageBox::warning(this, "Error de sprite",
+                             QString("No se pudo cargar el personaje:\n%1\n\n"
+                                     "Se usará el personaje por defecto.").arg(e.what()));
+        try {
+            player->cargarSprite(":/Imagenes/Skater.png");
+        }
+        catch (...) {
+            qDebug() << "No se pudo cargar ningún sprite.";
+        }
+    }
 
-    if(nivelActual == 1)
-    {
-        rutaFondo = ":/Imagenes/FondoN1.png";
+    // ── NIVEL 1 ──────────────────────────────────────────────
+    if (nivelActual == 1) {
+
+        if (dron) dron->detener();
+
         player->setSueloY(380);
         player->setPos(100, 380);
+
+        bgPixmap = QPixmap(":/Imagenes/FondoN1.png");
+        if (bgPixmap.isNull()) {
+            bgPixmap = QPixmap(800, 500);
+            bgPixmap.fill(QColor(100, 180, 100));
+        } else {
+            bgPixmap = bgPixmap.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        }
+        bgOffset = 0.0;
+        scene->setBackgroundBrush(bgPixmap);
+
+        stack->setCurrentWidget(pantallaJuego);
+        setFocus();
+
+        if (!ia) {
+            ia = new IAObstaculos(scene, player, this);
+            connect(ia, &IAObstaculos::jugadorMurio,    [this](){ timerJuego->stop(); timerAnim->stop(); });
+            connect(ia, &IAObstaculos::nivelCompletado, [this](){ timerJuego->stop(); timerAnim->stop(); });
+        }
+
+        ia->setDificultadInicial(dificultadSel);
+
+        try {
+            ia->iniciar(60);
+        }
+        catch (const std::runtime_error &e) {
+            QMessageBox::critical(this, "Error al iniciar nivel",
+                                  QString("No se pudo iniciar el nivel:\n%1").arg(e.what()));
+            volverAlMenu();
+            return;
+        }
+
+        timerJuego->start();
+        timerAnim->start();
     }
-    else if(nivelActual == 2)
-    {
-        rutaFondo = ":/Imagenes/FondoN2.png";
-        player->setSueloY(380);
-        player->setPos(360, 380);
+
+    // ── NIVEL 2 ──────────────────────────────────────────────
+    else if (nivelActual == 2) {
+
+        if (ia) ia->detener();
+
+        // Vista cenital — sin física de gravedad
+        player->setSueloY(9999);
+        player->setPos(380, 280);
+
+        // Fondo con imagen FondoN2.png
+        bgPixmap = QPixmap(":/Imagenes/FondoN2.png");
+        if (bgPixmap.isNull()) {
+            bgPixmap = QPixmap(800, 500);
+            bgPixmap.fill(QColor(30, 140, 100));
+        } else {
+            bgPixmap = bgPixmap.scaled(800, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        }
+        bgOffset = 0.0;
+        scene->setBackgroundBrush(bgPixmap);
+
+        stack->setCurrentWidget(pantallaJuego);
+        setFocus();
+
+        if (!dron) {
+            dron = new DronIA(scene, player, dificultadSel, this);
+            connect(dron, &DronIA::jugadorMurio,
+                    [this](){ timerJuego->stop(); timerAnim->stop(); });
+            connect(dron, &DronIA::nivelCompletado,
+                    [this](){ timerJuego->stop(); timerAnim->stop(); });
+        }
+
+        dron->setDificultad(dificultadSel);
+        dron->iniciar();
+
+        timerJuego->start();
+        timerAnim->start();
     }
-
-    bgPixmap = QPixmap(rutaFondo);
-    if (bgPixmap.isNull()) {
-        bgPixmap = QPixmap(800, 500);
-        bgPixmap.fill(QColor(100, 180, 100));
-    } else {
-        bgPixmap = bgPixmap.scaled(800, 500,
-                                   Qt::IgnoreAspectRatio,
-                                   Qt::SmoothTransformation);
-    }
-    bgOffset = 0.0;
-    scene->setBackgroundBrush(bgPixmap);
-
-    stack->setCurrentWidget(pantallaJuego);
-    // ajustarEscalaVista() se llama automáticamente vía currentChanged
-    setFocus();
-
-    if (!ia) {
-        ia = new IAObstaculos(scene, player, this);
-        connect(ia, &IAObstaculos::jugadorMurio, [this](){
-            timerJuego->stop();
-            timerAnim->stop();
-        });
-        connect(ia, &IAObstaculos::nivelCompletado, [this](){
-            timerJuego->stop();
-            timerAnim->stop();
-        });
-    }
-
-    ia->setDificultadInicial(dificultadSel);
-    ia->setNivelVertical(nivelActual == 2);
-    ia->iniciar(60);
-
-    timerJuego->start();
-    timerAnim->start();
 }
 
+// ─────────────────────────────────────────────────────────────
+//  reiniciarNivelActual()
+// ─────────────────────────────────────────────────────────────
 void MainWindow::reiniciarNivelActual()
 {
-    if (ia) ia->detener();
     timerJuego->stop();
     timerAnim->stop();
+    if (ia   && nivelActual == 1) ia->detener();
+    if (dron && nivelActual == 2) dron->detener();
+
     iniciarNivel(nivelActual);
 }
 
+// ─────────────────────────────────────────────────────────────
+//  volverAlMenu()
+// ─────────────────────────────────────────────────────────────
 void MainWindow::volverAlMenu()
 {
     timerJuego->stop();
     timerAnim->stop();
-    if (ia) ia->detener();
+    if (ia)   ia->detener();
+    if (dron) dron->detener();
     stack->setCurrentWidget(menuPrincipal);
 }
 
+// ─────────────────────────────────────────────────────────────
+//  tickJuego()  — loop principal (~60fps)
+// ─────────────────────────────────────────────────────────────
 void MainWindow::tickJuego()
 {
     if (stack->currentWidget() != pantallaJuego) return;
 
-    if (ia) ia->actualizar();
+    // ── Actualizar agente del nivel activo ───────────────────
+    if (nivelActual == 1 && ia)   ia->actualizar();
+    if (nivelActual == 2 && dron) dron->actualizar();
 
+    // ── Factor de velocidad: reducido si el jugador está en charco ──
+    const qreal VEL_BASE   = 6.0;
+    qreal factorCharco     = (nivelActual == 2 && dron)
+                             ? dron->factorVelocidadJugador()
+                             : 1.0;
+    qreal velH = VEL_BASE * factorCharco;
+
+    // ── Movimiento horizontal ────────────────────────────────
     bool moviendose = false;
 
     if (teclasActivas.contains(Qt::Key_A) || teclasActivas.contains(Qt::Key_Left)) {
-        player->moverIzquierda();
+        if (nivelActual == 2) {
+            // Vista cenital: mover directamente con setX
+            qreal nx = player->x() - velH;
+            if (nx >= 10) player->setX(nx);
+        } else {
+            player->moverIzquierda();
+        }
         moviendose = true;
     } else if (teclasActivas.contains(Qt::Key_D) || teclasActivas.contains(Qt::Key_Right)) {
-        player->moverDerecha();
+        if (nivelActual == 2) {
+            qreal nx = player->x() + velH;
+            if (nx <= 740) player->setX(nx);
+        } else {
+            player->moverDerecha();
+        }
         moviendose = true;
     }
 
-    if (!moviendose) player->detenerHorizontal();
+    if (!moviendose && nivelActual == 1) player->detenerHorizontal();
 
-    QPixmap canvas(800, 500);
-    QPainter painter(&canvas);
+    // ── Movimiento vertical libre (solo nivel 2 — vista cenital) ──
+    if (nivelActual == 2) {
+        qreal velV = VEL_BASE * factorCharco;
+        if (teclasActivas.contains(Qt::Key_W) || teclasActivas.contains(Qt::Key_Up)) {
+            qreal ny = player->y() - velV;
+            if (ny >= 60) player->setY(ny);
+        } else if (teclasActivas.contains(Qt::Key_S) || teclasActivas.contains(Qt::Key_Down)) {
+            qreal ny = player->y() + velV;
+            if (ny <= 430) player->setY(ny);
+        }
+    }
 
-    if(nivelActual == 1)
-    {
+    // ── Dibujar fondo ────────────────────────────────────────
+    if (nivelActual == 1) {
+        // Scroll horizontal del fondo (nivel 1 sin cambios)
         bgOffset -= 2;
-        if(bgOffset <= -800)
-            bgOffset += 800;
+        if (bgOffset <= -800) bgOffset += 800;
+
+        QPixmap canvas(800, 500);
+        QPainter painter(&canvas);
         painter.drawPixmap(bgOffset, 0, bgPixmap);
         painter.drawPixmap(bgOffset + 800, 0, bgPixmap);
+        painter.end();
+        scene->setBackgroundBrush(canvas);
     }
-    else if(nivelActual == 2)
-    {
-        bgOffset += 2;
-        if(bgOffset >= 500)
-            bgOffset -= 500;
-        painter.drawPixmap(0, bgOffset, bgPixmap);
-        painter.drawPixmap(0, bgOffset - 500, bgPixmap);
+    // Nivel 2: fondo estático (FondoN2.png asignado en iniciarNivel, no se redibuja)
+
+    // ── Física del jugador ───────────────────────────────────
+    // En nivel 2 no aplicamos física de gravedad (vista cenital)
+    if (nivelActual == 1) {
+        player->aplicarFisica();
     }
-
-    painter.end();
-    scene->setBackgroundBrush(canvas);
-
-    player->aplicarFisica();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -492,25 +550,16 @@ void MainWindow::tickJuego()
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (stack->currentWidget() == pantallaJuego) {
-        if (event->key() == Qt::Key_Escape) {
-            volverAlMenu();
-            return;
-        }
+        if (event->key() == Qt::Key_Escape) { volverAlMenu(); return; }
+        if (event->key() == Qt::Key_R && !event->isAutoRepeat()) { reiniciarNivelActual(); return; }
 
-        if (event->key() == Qt::Key_R && !event->isAutoRepeat()) {
-            reiniciarNivelActual();
-            return;
-        }
-
-        if (!event->isAutoRepeat() &&
-            (event->key() == Qt::Key_W  ||
-             event->key() == Qt::Key_Up ||
-             event->key() == Qt::Key_Space))
+        // Salto solo en nivel 1
+        if (nivelActual == 1 && !event->isAutoRepeat() &&
+            (event->key() == Qt::Key_W || event->key() == Qt::Key_Up || event->key() == Qt::Key_Space))
         {
             player->saltar();
         }
     }
-
     teclasActivas.insert(event->key());
 }
 

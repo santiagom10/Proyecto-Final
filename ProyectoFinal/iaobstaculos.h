@@ -61,8 +61,6 @@ public:
     // Configuración de dificultad inicial (1=fácil, 2=normal, 3=difícil)
     void setDificultadInicial(int d);
 
-    void setNivelVertical(bool v);
-
 signals:
     void jugadorMurio();
     void nivelCompletado();
@@ -90,8 +88,6 @@ private:
     int  segundosRestantes;
     bool terminado;
     bool gano;
-
-    bool nivelVertical = false;
 
     // ─── HUD ─────────────────────────────────────────────
     QGraphicsTextItem  *textoTiempo   = nullptr;

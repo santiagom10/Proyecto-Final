@@ -2,6 +2,7 @@
 
 Obstaculo::Obstaculo(QGraphicsItem *parent)
     : QGraphicsPixmapItem(parent),
+    EntidadJuego(),
     tipo(GALLETA)
 {}
 
@@ -22,47 +23,50 @@ void Obstaculo::cargarSprite(const QString &ruta, int ancho, int alto)
 }
 
 // ─────────────────────────────────────────────────────────────
-//  actualizarFisica()
+//  actualizarFisica()  — implementación del contrato EntidadJuego
 //
-//  Aplica el modelo físico elegido cada tick de juego.
-//
-//  LINEAL:      X -= velocidadX         (base, movimiento uniforme)
-//  PARABOLICO:  X -= velocidadX         (misma X)
-//               Vy += gravedad          (aceleración constante → parabola)
-//               Y  += Vy
-//  OSCILATORIO: X -= velocidadX
-//               Y  = yBase + A·sin(ω·t + φ)   (movimiento armónico)
+//  LINEAL:      X -= velocidadX
+//  PARABOLICO:  Vy += gravedad  →  Y += Vy  (parábola real)
+//  OSCILATORIO: Y = yBase + A·sin(ω·t + φ)
 // ─────────────────────────────────────────────────────────────
 void Obstaculo::actualizarFisica()
 {
     tickPropio++;
-
     switch (modeloFisico) {
-
     case FISICA_LINEAL:
         setX(x() - velocidadX);
         break;
 
     case FISICA_PARABOLICA:
-    {
         velocidadY += gravedad;
-
         setX(x() - velocidadX);
         setY(y() + velocidadY);
-
+        if (y() < 80) {
+            setY(80);
+            velocidadY = qAbs(velocidadY) * 0.5;
+        }
         break;
-    }
 
     case FISICA_OSCILATORIA:
-        // Movimiento Armónico Simple en Y
-        // y(t) = yBase + A * sin(ω*t + φ)
         setX(x() - velocidadX);
         setY(yBase + amplitud * qSin(frecuencia * tickPropio + fase));
         break;
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  reiniciar()  — implementación del contrato EntidadJuego
+// ─────────────────────────────────────────────────────────────
+void Obstaculo::reiniciar()
+{
+    velocidadX  = 4.0;
+    velocidadY  = 0.0;
+    tickPropio  = 0;
+    activo      = true;
+    setOpacity(1.0);
+}
+
 bool Obstaculo::fueraDePantalla() const
 {
-    return x() < -80 || y() > 600;
+    return x() < -80;
 }
