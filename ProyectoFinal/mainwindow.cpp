@@ -419,6 +419,7 @@ void MainWindow::iniciarNivel(int num)
     }
 
     ia->setDificultadInicial(dificultadSel);
+    ia->setNivelVertical(nivelActual == 2);
     ia->iniciar(60);
 
     timerJuego->start();

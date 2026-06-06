@@ -44,16 +44,14 @@ void Obstaculo::actualizarFisica()
         break;
 
     case FISICA_PARABOLICA:
-        // Física projectil: Vy crece por gravedad cada frame
+    {
         velocidadY += gravedad;
+
         setX(x() - velocidadX);
         setY(y() + velocidadY);
-        // Tope de pantalla (rebotar suavemente en el techo)
-        if (y() < 80) {
-            setY(80);
-            velocidadY = qAbs(velocidadY) * 0.5; // rebote amortiguado
-        }
+
         break;
+    }
 
     case FISICA_OSCILATORIA:
         // Movimiento Armónico Simple en Y
@@ -66,5 +64,5 @@ void Obstaculo::actualizarFisica()
 
 bool Obstaculo::fueraDePantalla() const
 {
-    return x() < -80;
+    return x() < -80 || y() > 600;
 }

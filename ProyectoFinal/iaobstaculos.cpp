@@ -48,9 +48,16 @@ IAObstaculos::IAObstaculos(QGraphicsScene *scene, Jugador *jugador, QObject *par
 }
 
 void IAObstaculos::setDificultadInicial(int d)
+
 {
     dificultadInicial = qBound(1, d, 3);
 }
+
+void IAObstaculos::setNivelVertical(bool v)
+{
+    nivelVertical = v;
+}
+
 
 // ─────────────────────────────────────────────────────────────
 //  iniciar()
@@ -225,11 +232,22 @@ void IAObstaculos::decidirObstaculo()
     // La parabólica ya no nace siempre al extremo derecho:
     // aparece un poco más cerca del jugador y con variación horizontal,
     // para que sí tenga interacción real y margen de esquiva.
-    qreal xInicial = 820;
-    if (modelo == FIS_PARABOLICA) {
-        xInicial = 200+ QRandomGenerator::global()->bounded(550); // 620..759
-    } else if (modelo == FIS_OSCILATORIA) {
-        xInicial = 780 + QRandomGenerator::global()->bounded(50);  // 780..829
+    qreal xInicial;
+    qreal yInicial;
+    if(nivelVertical)
+    {
+        xInicial = QRandomGenerator::global()->bounded(50, 750);
+
+        // Nacen fuera de la pantalla por arriba
+        yInicial = -100;
+
+        // En modo vertical todos caen
+        modelo = FIS_PARABOLICA;
+    }
+    else
+    {
+        xInicial = 820;
+        yInicial = altura;
     }
 
     // ── c) ACCIÓN ──────────────────────────────────────
@@ -373,9 +391,20 @@ void IAObstaculos::generarObstaculo(TipoObst tipo, ModeloFis modelo,
 
     case FIS_PARABOLICA:
         o->modeloFisico = Obstaculo::FISICA_PARABOLICA;
-        // Lanzamiento más suave: empieza con caída lenta y gravedad menor
-        o->velocidadY = 0.0;
-        o->gravedad   = 0.08;
+
+        if(nivelVertical)
+        {
+            // Caída vertical desde arriba
+            o->velocidadX = 0;
+            o->velocidadY = 2.0;
+            o->gravedad   = 0.15;
+        }
+        else
+        {
+            // Comportamiento original del nivel lateral
+            o->velocidadY = 0.0;
+            o->gravedad   = 0.08;
+        }
         break;
 
     case FIS_OSCILATORIA:
